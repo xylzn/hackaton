@@ -1,0 +1,87 @@
+/* Tema halaman admin */
+body {
+    background-color: #f4f8fb; /* Warna latar belakang yang lebih netral */
+    font-family: 'Poppins', sans-serif; /* Menggunakan font yang sama */
+    color: #333;
+    margin: 0;
+    padding: 0;
+}
+
+header {
+    background-color: #0d6efd; /* Warna header biru */
+    color: white;
+    padding: 12px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+header img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #fff;
+}
+
+h4 {
+    color: #111; /* Warna teks judul */
+    font-weight: 600; /* Menyesuaikan dengan gaya dashboard */
+}
+
+.container {
+    max-width: 1200px; /* Lebar maksimum kontainer */
+    background-color: #fff; /* Warna latar belakang kontainer */
+    border-radius: 15px; /* Sudut kontainer yang membulat */
+    padding: 25px 30px; /* Padding kontainer */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Bayangan kontainer */
+}
+
+.table {
+    border-radius: 10px; /* Sudut tabel yang membulat */
+    overflow: hidden; /* Menghindari overflow */
+}
+
+.table th {
+    background-color: #007bff; /* Warna header tabel */
+    color: white; /* Warna teks header tabel */
+    font-weight: 600; /* Menyesuaikan dengan gaya dashboard */
+}
+
+.table td {
+    vertical-align: middle; /* Rata tengah untuk sel tabel */
+}
+
+.table tbody tr:hover {
+    background-color: #f0f8ff; /* Warna hover untuk baris tabel */
+    transition: 0.2s ease-in-out; /* Transisi hover */
+}
+
+/* Tombol */
+.btn-success {
+    background-color: #28a745; /* Warna tombol proses */
+    border: none; /* Menghilangkan border */
+    transition: 0.3s; /* Transisi hover */
+}
+
+.btn-danger {
+    background-color: #dc3545; /* Warna tombol hapus */
+    border: none; /* Menghilangkan border */
+    transition: 0.3s; /* Transisi hover */
+}
+
+.btn-success:hover {
+    background-color: #218838; /* Warna hover tombol proses */
+}
+
+.btn-danger:hover {
+    background-color: #c82333; /* Warna hover tombol hapus */
+}
+
+/* Responsif */
+@media (max-width: 768px) {
+    .container {
+        padding: 15px; /* Padding lebih kecil pada perangkat kecil */
+    }
+}

@@ -96,6 +96,19 @@
             });
         });
 
+        // Simpan laporan ke localStorage
+        const laporanData = JSON.parse(localStorage.getItem('laporanData')) || [];
+        laporanData.push({
+            namaPelapor: document.getElementById("namaPelapor").value,
+            emailPelapor: document.getElementById("emailPelapor").value,
+            judul: document.getElementById("judul").value,
+            isi: document.getElementById("isi").value,
+            tanggal: document.getElementById("tanggal").value,
+            lokasi: document.getElementById("lokasi").value,
+            status: "Belum Diproses"
+        });
+        localStorage.setItem('laporanData', JSON.stringify(laporanData));
+
         // contoh submit (saat siap, ganti action/fetch)
         document.getElementById('laporForm').addEventListener('submit', e => {
             e.preventDefault();
