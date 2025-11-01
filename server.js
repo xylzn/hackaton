@@ -24,6 +24,18 @@ const SESSION_TTL_MS =
     ? PARSED_SESSION_TTL
     : DEFAULT_SESSION_TTL_MS;
 const COOKIE_SECURE = process.env.NODE_ENV === "production";
+const DEFAULT_RESET_TOKEN_TTL_MS = 10 * 60 * 1000; // 10 menit
+const PARSED_RESET_TOKEN_TTL = Number(process.env.RESET_TOKEN_TTL_MS);
+const RESET_TOKEN_TTL_MS =
+  Number.isFinite(PARSED_RESET_TOKEN_TTL) && PARSED_RESET_TOKEN_TTL > 0
+    ? PARSED_RESET_TOKEN_TTL
+    : DEFAULT_RESET_TOKEN_TTL_MS;
+const ARGON2_OPTIONS = {
+  type: argon2.argon2id,
+  memoryCost: Number(process.env.ARGON2_MEMORY_COST || 19456),
+  timeCost: Number(process.env.ARGON2_TIME_COST || 3),
+  parallelism: Number(process.env.ARGON2_PARALLELISM || 1),
+};
 
 const PROFILE_FIELD_DEFINITIONS = [
   { key: "fullName", column: "full_name" },
@@ -117,6 +129,102 @@ async function createSession(userId) {
     hashedToken,
     expiresAt: expiresAtIso,
   };
+}
+
+async function pruneResetTokens(userId) {
+  await dbRun(
+    `
+      DELETE FROM password_reset_tokens
+      WHERE user_id = ?
+        AND (
+          used_at IS NOT NULL
+          OR datetime(expires_at) <= datetime('now')
+        )
+    `,
+    [userId]
+  );
+}
+
+async function createPasswordResetToken(userId) {
+  await pruneResetTokens(userId);
+
+  const token = crypto.randomBytes(32).toString("hex");
+  const tokenHash = hashSessionToken(token);
+  const expiresAtIso = new Date(Date.now() + RESET_TOKEN_TTL_MS).toISOString();
+
+  await dbRun(
+    `
+      INSERT INTO password_reset_tokens (user_id, token_hash, expires_at, used_at)
+      VALUES (?, ?, ?, NULL)
+    `,
+    [userId, tokenHash, expiresAtIso]
+  );
+
+  return {
+    token,
+    tokenHash,
+    expiresAt: expiresAtIso,
+  };
+}
+
+async function getPasswordResetToken(rawToken) {
+  if (!rawToken) {
+    return null;
+  }
+
+  const tokenHash = hashSessionToken(rawToken);
+
+  return dbGet(
+    `
+      SELECT
+        prt.id AS reset_id,
+        prt.user_id AS reset_user_id,
+        prt.token_hash,
+        prt.expires_at,
+        prt.used_at,
+        prt.created_at AS reset_created_at,
+        u.id AS user_id,
+        u.nik,
+        u.full_name,
+        u.email,
+        u.password_hash,
+        u.is_active
+      FROM password_reset_tokens prt
+      INNER JOIN users u ON u.id = prt.user_id
+      WHERE prt.token_hash = ?
+    `,
+    [tokenHash]
+  );
+}
+
+async function markResetTokenUsed(resetId) {
+  const usedAt = new Date().toISOString();
+  await dbRun(
+    `
+      UPDATE password_reset_tokens
+      SET used_at = ?
+      WHERE id = ?
+    `,
+    [usedAt, resetId]
+  );
+  return usedAt;
+}
+
+function isResetTokenValid(record) {
+  if (!record) {
+    return { valid: false, reason: "Token tidak ditemukan." };
+  }
+  if (record.used_at) {
+    return { valid: false, reason: "Token sudah digunakan." };
+  }
+  const expiresAt = new Date(record.expires_at);
+  if (Number.isNaN(expiresAt.getTime()) || expiresAt.getTime() <= Date.now()) {
+    return { valid: false, reason: "Token sudah kedaluwarsa." };
+  }
+  if (record.is_active !== 1) {
+    return { valid: false, reason: "Akun dalam keadaan tidak aktif." };
+  }
+  return { valid: true };
 }
 
 async function recordLoginAttempt({
@@ -377,6 +485,56 @@ async function getProfilePayload(userId) {
   return { user, profile, completion };
 }
 
+const PASSWORD_REQUIREMENTS = [
+  {
+    key: "length",
+    message: "Minimal 8 karakter.",
+    test: (pwd) => pwd.length >= 8,
+  },
+  {
+    key: "upper",
+    message: "Minimal 1 huruf kapital.",
+    test: (pwd) => /[A-Z]/.test(pwd),
+  },
+  {
+    key: "lower",
+    message: "Minimal 1 huruf kecil.",
+    test: (pwd) => /[a-z]/.test(pwd),
+  },
+  {
+    key: "number",
+    message: "Minimal 1 angka.",
+    test: (pwd) => /[0-9]/.test(pwd),
+  },
+  {
+    key: "special",
+    message: "Minimal 1 karakter spesial.",
+    test: (pwd) => /[!@#$%^&*(),.?\":{}|<>]/.test(pwd),
+  },
+];
+
+function validatePasswordStrength(password) {
+  if (typeof password !== "string") {
+    return {
+      isValid: false,
+      failed: PASSWORD_REQUIREMENTS.map((requirement) => requirement.key),
+      messages: PASSWORD_REQUIREMENTS.map((requirement) => requirement.message),
+    };
+  }
+
+  const failed = PASSWORD_REQUIREMENTS.filter(
+    (requirement) => !requirement.test(password)
+  ).map((requirement) => requirement.key);
+
+  return {
+    isValid: failed.length === 0,
+    failed,
+    messages: PASSWORD_REQUIREMENTS.filter((requirement) =>
+      failed.includes(requirement.key)
+    ).map((requirement) => requirement.message),
+  };
+}
+
 const app = express();
 
 app.disable("x-powered-by");
@@ -540,6 +698,231 @@ app.post(
     );
     clearSessionCookie(res);
     res.json({ message: "Logout berhasil." });
+  })
+);
+
+app.post(
+  "/api/auth/forgot",
+  asyncHandler(async (req, res) => {
+    const rawNik = req.body?.nik;
+    if (!rawNik || typeof rawNik !== "string") {
+      res.status(400).json({ error: "NIK wajib diisi." });
+      return;
+    }
+
+    const nik = sanitizeNik(rawNik);
+    if (nik.length !== 16) {
+      res.status(400).json({ error: "Format NIK tidak valid. Pastikan terdiri dari 16 digit." });
+      return;
+    }
+
+    const userRow = await dbGet(
+      `
+        SELECT id, full_name, is_active
+        FROM users
+        WHERE nik = ?
+      `,
+      [nik]
+    );
+
+    if (!userRow) {
+      res.status(404).json({ error: "NIK tidak ditemukan atau belum terdaftar." });
+      return;
+    }
+
+    if (userRow.is_active !== 1) {
+      res.status(403).json({ error: "Akun dalam keadaan tidak aktif." });
+      return;
+    }
+
+    const tokenInfo = await createPasswordResetToken(userRow.id);
+    const resetPath = `/html/lupapassword.html?token=${tokenInfo.token}`;
+
+    res.json({
+      message: "Link reset password berhasil dibuat.",
+      resetLink: resetPath,
+      token: tokenInfo.token,
+      expiresAt: tokenInfo.expiresAt,
+      user: {
+        nik,
+        fullName: userRow.full_name,
+      },
+    });
+  })
+);
+
+app.get(
+  "/api/auth/reset-password/validate",
+  asyncHandler(async (req, res) => {
+    const token = req.query?.token;
+    if (!token || typeof token !== "string") {
+      res.status(400).json({ error: "Token reset tidak ditemukan." });
+      return;
+    }
+
+    const record = await getPasswordResetToken(token);
+    const validation = isResetTokenValid(record);
+
+    if (!validation.valid) {
+      res.status(400).json({ error: validation.reason || "Token tidak valid." });
+      return;
+    }
+
+    res.json({
+      valid: true,
+      nik: record.nik,
+      fullName: record.full_name,
+      expiresAt: record.expires_at,
+    });
+  })
+);
+
+app.post(
+  "/api/auth/reset-password",
+  asyncHandler(async (req, res) => {
+    const token = req.body?.token;
+    const newPassword = req.body?.newPassword;
+
+    if (!token || typeof token !== "string") {
+      res.status(400).json({ error: "Token reset wajib disertakan." });
+      return;
+    }
+
+    if (!newPassword) {
+      res.status(400).json({ error: "Password baru wajib diisi." });
+      return;
+    }
+
+    const record = await getPasswordResetToken(token);
+    const validation = isResetTokenValid(record);
+
+    if (!validation.valid) {
+      res.status(400).json({ error: validation.reason || "Token tidak valid." });
+      return;
+    }
+
+    const strength = validatePasswordStrength(newPassword);
+    if (!strength.isValid) {
+      res.status(400).json({
+        error: "Password baru belum memenuhi ketentuan.",
+        failed: strength.failed,
+        messages: strength.messages,
+      });
+      return;
+    }
+
+    const newHash = await argon2.hash(newPassword, ARGON2_OPTIONS);
+
+    await dbRun(
+      `
+        INSERT INTO user_password_history (user_id, password_hash)
+        VALUES (?, ?)
+      `,
+      [record.user_id, record.password_hash]
+    );
+
+    await dbRun(
+      `
+        UPDATE users
+        SET password_hash = ?, password_algo = 'argon2id', must_reset_password = 0
+        WHERE id = ?
+      `,
+      [newHash, record.user_id]
+    );
+
+    await dbRun(
+      `
+        UPDATE sessions
+        SET revoked_at = datetime('now')
+        WHERE user_id = ? AND revoked_at IS NULL
+      `,
+      [record.user_id]
+    );
+
+    await markResetTokenUsed(record.reset_id);
+
+    res.json({
+      message: "Password berhasil diubah. Silakan login dengan password baru Anda.",
+    });
+  })
+);
+
+app.post(
+  "/api/auth/change-password",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const userId = req.auth.user.id;
+    const currentPassword = req.body?.currentPassword;
+    const newPassword = req.body?.newPassword;
+
+    if (!currentPassword || !newPassword) {
+      res.status(400).json({ error: "Password saat ini dan password baru wajib diisi." });
+      return;
+    }
+
+    const userRow = await dbGet(
+      `
+        SELECT id, password_hash
+        FROM users
+        WHERE id = ?
+      `,
+      [userId]
+    );
+
+    if (!userRow) {
+      res.status(404).json({ error: "Data pengguna tidak ditemukan." });
+      return;
+    }
+
+    const isCurrentValid = await argon2.verify(userRow.password_hash, currentPassword);
+    if (!isCurrentValid) {
+      res.status(401).json({ error: "Password saat ini tidak sesuai." });
+      return;
+    }
+
+    if (currentPassword === newPassword) {
+      res.status(400).json({ error: "Password baru tidak boleh sama dengan password saat ini." });
+      return;
+    }
+
+    const strength = validatePasswordStrength(newPassword);
+    if (!strength.isValid) {
+      res.status(400).json({
+        error: "Password baru belum memenuhi ketentuan.",
+        failed: strength.failed,
+        messages: strength.messages,
+      });
+      return;
+    }
+
+    const isSameAsCurrent = await argon2.verify(userRow.password_hash, newPassword).catch(() => false);
+    if (isSameAsCurrent) {
+      res.status(400).json({ error: "Password baru tidak boleh sama dengan password saat ini." });
+      return;
+    }
+
+    const newHash = await argon2.hash(newPassword, ARGON2_OPTIONS);
+
+    await dbRun(
+      `
+        INSERT INTO user_password_history (user_id, password_hash)
+        VALUES (?, ?)
+      `,
+      [userId, userRow.password_hash]
+    );
+
+    await dbRun(
+      `
+        UPDATE users
+        SET password_hash = ?, password_algo = 'argon2id', must_reset_password = 0
+        WHERE id = ?
+      `,
+      [newHash, userId]
+    );
+
+    res.json({
+      message: "Password berhasil diubah.",
+    });
   })
 );
 
