@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Admin - Data Warga</title>
+  <link rel="stylesheet" href="InputDataWarga.css">
+  <script defer src="InputDataWarga.js"></script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h2>Dashboard Admin</h2>
+      <button id="logoutBtn">Logout</button>
+    </header>
+
+    <section class="input-section">
+      <h3>Tambah Akun Warga</h3>
+      <form id="addForm">
+        <input type="text" id="nik" placeholder="Masukkan NIK (16 digit)" maxlength="16" inputmode="numeric" required>
+        <input type="text" id="nama" placeholder="Masukkan Nama Lengkap" required>
+        <button type="submit">Simpan</button>
+      </form>
+      <div id="alertBox"></div>
+    </section>
+
+    <section class="table-section">
+      <h3>Daftar Akun Warga</h3>
+      <table id="dataTable">
+        <thead>
+          <tr>
+            <th>No</th>
+            <th>NIK</th>
+            <th>Nama</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Data akan diisi dari JavaScript -->
+        </tbody>
+      </table>
+    </section>
+  </div>
+</body>
+</html>
