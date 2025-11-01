@@ -1,0 +1,73 @@
+/* mengikuti tema: body terang + header biru */
+body {
+  background-color: #f5f7fb;
+  font-family: 'Segoe UI', sans-serif;
+  margin: 0;
+}
+header {
+  background-color: #0d6efd;
+  color: white;
+  padding: 12px 24px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+header img { width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid #fff;}
+
+/* card */
+.pw-card {
+  border-radius: 8px;
+  background: #fff;
+  overflow: hidden;
+}
+.pw-header {
+  background: linear-gradient(90deg,#0d6efd,#468ffd);
+  color: #fff;
+  padding: 18px 20px;
+}
+.pw-card .form-control {
+  height: 46px;
+  padding: 10px 12px;
+  border: 1px solid #e6e9ee;
+  border-radius: 6px;
+}
+
+/* toggle eye button */
+.toggle-pass {
+  position: absolute;
+  right: 10px;
+  top: 36px;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  line-height: 1;
+  padding: 4px;
+  cursor: pointer;
+}
+
+/* criteria list */
+.pw-criteria li {
+  padding: 6px 0;
+  font-size: 14px;
+}
+.pw-criteria li span {
+  display: inline-block;
+  width: 20px;
+}
+
+/* primary button style consistent */
+.btn-primary {
+  background-color: #0d6efd;
+  border-color: #468ffd;
+}
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* responsive */
+@media (max-width: 576px) {
+  .toggle-pass { top: 44px; }
+}

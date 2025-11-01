@@ -1,0 +1,65 @@
+body {
+      background-color: #f5f7fb;
+      transition: background-color 0.4s, color 0.4s;
+    }
+    .form-card {
+      max-width: 950px;
+      margin: 40px auto;
+      background-color: #fff;
+      border-radius: 14px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+      padding: 40px 50px;
+      transition: background-color 0.4s, color 0.4s;
+    }
+    h2 {
+      color: #0056d2;
+      text-align: center;
+      font-weight: 700;
+      margin-bottom: 25px;
+    }
+
+    h5 {
+      color: #0d6efd;
+      font-weight: 600;
+      margin-bottom: 15px;
+    }
+
+    .info-box {
+      background-color: #e9f3ff;
+      border-left: 4px solid #0d6efd;
+      padding: 18px;
+      border-radius: 8px;
+      margin-bottom: 25px;
+      transition: background-color 0.4s;
+    }
+    .btn-submit {
+      width: 100%;
+      background-color: #0d6efd;
+      color: #fff;
+      font-weight: 600;
+      padding: 10px;
+      border-radius: 6px;
+      transition: 0.3s;
+    }
+    .btn-submit:hover {
+      background-color: #0849c9;
+      transform: scale(1.02);
+    }
+    .img-thumbnail {
+      border: 2px solid #ddd;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      transition: transform 0.2s;
+    }
+
+    .img-thumbnail:hover {
+      transform: scale(1.05);
+    }
+    /* Tambahkan style untuk preview foto */
+#fotoPreview {
+  width: 160px;  /* 3x4 ratio */
+  height: 213px;
+  object-fit: cover;
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
