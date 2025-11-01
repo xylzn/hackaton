@@ -99,7 +99,7 @@
     });
 
     window.addEventListener("navbar:change-password", () => {
-      alert("Fitur ubah password akan segera tersedia.");
+      window.location.href = "/html/lupapassword.html";
     });
 
     window.addEventListener("navbar:sidebar-select", (event) => {
