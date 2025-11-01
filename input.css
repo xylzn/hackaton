@@ -1,4 +1,4 @@
- body {
+body {
       background-color: #f5f7fb;
       transition: background-color 0.4s, color 0.4s;
     }
@@ -45,20 +45,21 @@
       background-color: #0849c9;
       transform: scale(1.02);
     }
+    .img-thumbnail {
+      border: 2px solid #ddd;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      transition: transform 0.2s;
+    }
 
-    /* 🌙 Dark Mode */
-    body.dark {
-      background-color: #1e1f25;
-      color: #e2e2e2;
+    .img-thumbnail:hover {
+      transform: scale(1.05);
     }
-    body.dark .form-card {
-      background-color: #2a2b31;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-    }
-    body.dark .info-box {
-      background-color: #343540;
-      border-left: 4px solid #4a90e2;
-    }
-    body.dark h2 {
-      color: #4a90e2;
-    }
+    /* Tambahkan style untuk preview foto */
+#fotoPreview {
+  width: 160px;  /* 3x4 ratio */
+  height: 213px;
+  object-fit: cover;
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}

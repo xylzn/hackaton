@@ -11,7 +11,6 @@
   <div class="form-card">
     <div class="d-flex justify-content-between align-items-center">
       <h2>Formulir Data Pribadi Warga</h2>
-      <button id="toggleTheme" class="btn btn-outline-secondary btn-sm">🌙 Mode Gelap</button>
     </div>
 
     <div class="info-box">
@@ -126,9 +125,15 @@
         </div>
       </div>
   
-      <div class="mb-3">
-        <label class="form-label">Upload Pas Foto (3x4) *</label>
-        <input type="file" class="form-control" accept=".jpg,.jpeg,.png" required>
+       <div class="mb-3 row align-items-center">
+        <div class="col-md-3">
+          <img id="fotoPreview" src="https://i.imgur.com/UQ0Q3mU.png" alt="Preview Foto">
+        </div>
+
+        <div class="col-md-9">
+          <label class="form-label">Upload Pas Foto (3x4) *</label>
+          <input type="file" class="form-control" id="pasFoto" accept=".jpg,.jpeg,.png" required>
+        </div>
       </div>
 
       <div class="form-check mb-3">
@@ -143,15 +148,6 @@
   </div>
 
   <script>
-    // 🌙 Toggle Dark Mode
-    const toggleBtn = document.getElementById("toggleTheme");
-    toggleBtn.addEventListener("click", () => {
-      document.body.classList.toggle("dark");
-      toggleBtn.textContent = document.body.classList.contains("dark")
-        ? "☀️ Mode Terang"
-        : "🌙 Mode Gelap";
-    });
-
     // 🔐 Validasi NIK
     const form = document.getElementById("formWarga");
     const nikInput = document.getElementById("nik");
@@ -180,6 +176,63 @@
       alert(`✅ Terima kasih, ${nama}!\nData Anda berhasil dikirim dan akan diproses secara aman.`);
       form.reset();
       nikInput.classList.remove("is-valid");
+    });
+
+    // Ganti script preview foto yang lama dengan yang baru:
+    const pasFoto = document.getElementById("pasFoto");
+    const fotoPreview = document.getElementById("fotoPreview");
+
+    pasFoto.addEventListener("change", function() {
+      const file = this.files[0];
+      
+      if (!file) {
+        console.log("Tidak ada file yang dipilih");
+        return;
+      }
+
+      // Validasi tipe file
+      if (!file.type.match('image.*')) {
+        alert("File harus berupa gambar!");
+        this.value = '';
+        return;
+      }
+
+      // Validasi ukuran file (max 1MB)
+      if (file.size > 1024 * 1024) {
+        alert("Ukuran file terlalu besar! Maksimal 1MB");
+        this.value = '';
+        return;
+      }
+
+      // Validasi dimensi gambar
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      
+      img.onload = function() {
+        const width = this.width;
+        const height = this.height;
+        const ratio = height / width;
+        
+        // Ratio 4:3 = 1.33333
+        if (ratio < 1.3 || ratio > 1.4) {
+          alert("Gambar harus berukuran 3x4!");
+          pasFoto.value = '';
+          fotoPreview.src = "https://i.imgur.com/UQ0Q3mU.png"; // Reset ke default
+          return;
+        }
+
+        // Jika lolos validasi, tampilkan preview
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          fotoPreview.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      };
+
+      img.onerror = function() {
+        alert("Error saat memuat gambar");
+        pasFoto.value = '';
+      };
     });
   </script>
 </body>
