@@ -1,0 +1,110 @@
+body {
+      background-color: #f5f7fb;
+      font-family: 'Segoe UI', sans-serif;
+      transition: background-color 0.4s, color 0.4s;
+    }
+    header {
+      background-color: #0d6efd;
+      color: white;
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    header img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid white;
+    }
+    .container-dashboard {
+      max-width: 1100px;
+      margin: 30px auto;
+    }
+    .welcome-box {
+      background-color: #e9f3ff;
+      border-left: 5px solid #0d6efd;
+      border-radius: 10px;
+      padding: 20px 25px;
+      margin-bottom: 25px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .card-section {
+      background-color: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+      padding: 20px 25px;
+      margin-bottom: 25px;
+      transition: transform 0.2s;
+    }
+    .card-section:hover {
+      transform: translateY(-3px);
+    }
+    .profile-photo {
+      width: 130px;
+      height: 160px;
+      border-radius: 10px;
+      object-fit: cover;
+      border: 3px solid #e1e4e8;
+    }
+    h4, h5 {
+      color: #0d6efd;
+      font-weight: 600;
+    }
+    .info-table td {
+      padding: 5px 10px;
+      vertical-align: top;
+    }
+    .small-card {
+      background-color: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+      padding: 15px 20px;
+      text-align: center;
+    }
+    .small-card h6 {
+      color: #555;
+    }
+    .small-card p {
+      font-size: 24px;
+      font-weight: 600;
+      margin: 5px 0 0 0;
+    }
+    footer {
+      text-align: center;
+      padding: 15px;
+      color: #777;
+      font-size: 14px;
+      margin-top: 30px;
+    }
+
+    /* 🌙 Dark Mode */
+    body.dark {
+      background-color: #1f2025;
+      color: #ddd;
+    }
+    body.dark header {
+      background-color: #21222a;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+    }
+    body.dark .welcome-box {
+      background-color: #2a2b31;
+      border-left-color: #4a90e2;
+    }
+    body.dark .card-section, 
+    body.dark .small-card {
+      background-color: #2b2d33;
+      color: #eee;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+    }
+    body.dark h4, body.dark h5 {
+      color: #4a90e2;
+    }
+
+    .jdol {
+      color: black;
+    }
