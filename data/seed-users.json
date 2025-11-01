@@ -1,0 +1,32 @@
+[
+  {
+    "nik": "3201021234560001",
+    "fullName": "Ayu Pratama",
+    "email": "ayu.pratama@contoh.local",
+    "password": "Rahasia#123"
+  },
+  {
+    "nik": "3201021234560002",
+    "fullName": "Bagus Santoso",
+    "email": "bagus.santoso@contoh.local",
+    "password": "Rahasia#123"
+  },
+  {
+    "nik": "3201021234560003",
+    "fullName": "Clara Widjaja",
+    "email": "clara.widjaja@contoh.local",
+    "password": "Rahasia#123"
+  },
+  {
+    "nik": "3201021234560004",
+    "fullName": "Dimas Mahendra",
+    "email": "dimas.mahendra@contoh.local",
+    "password": "Rahasia#123"
+  },
+  {
+    "nik": "3201021234560005",
+    "fullName": "Eka Yuliani",
+    "email": "eka.yuliani@contoh.local",
+    "password": "Rahasia#123"
+  }
+]
