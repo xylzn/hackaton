@@ -47,6 +47,10 @@
     });
 
     window.addEventListener("navbar:change-password", () => {
+      window.location.href = "/html/lupapassword.html";
+    });
+
+    window.addEventListener("navbar:change-password", () => {
       alert("Fitur ubah password akan segera tersedia.");
     });
 

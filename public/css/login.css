@@ -58,6 +58,37 @@
       box-sizing: border-box;
     }
 
+    .password-field .password-input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .password-field input {
+      padding-right: 76px;
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 12px;
+      background: transparent;
+      border: none;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #0d47a1;
+      cursor: pointer;
+      padding: 4px 6px;
+      border-radius: 6px;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    .toggle-password:hover,
+    .toggle-password:focus-visible {
+      background: rgba(13, 71, 161, 0.12);
+      color: #052970;
+      outline: none;
+    }
+
     .error-message {
       color: red;
       font-size: 13px;

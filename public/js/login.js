@@ -12,6 +12,20 @@
     const nikError = document.getElementById("nikError");
     const passError = document.getElementById("passError");
     const submitButton = form.querySelector('input[type="submit"]');
+    const togglePasswordBtn = document.getElementById("togglePassword");
+
+    if (togglePasswordBtn) {
+      togglePasswordBtn.addEventListener("click", () => {
+        const isHidden = passInput.getAttribute("type") === "password";
+        passInput.setAttribute("type", isHidden ? "text" : "password");
+        togglePasswordBtn.textContent = isHidden ? "Sembunyikan" : "Lihat";
+        togglePasswordBtn.setAttribute(
+          "aria-label",
+          isHidden ? "Sembunyikan password" : "Tampilkan password"
+        );
+        togglePasswordBtn.setAttribute("aria-pressed", String(isHidden));
+      });
+    }
 
     const savedNik = localStorage.getItem("nik");
     if (savedNik) {
