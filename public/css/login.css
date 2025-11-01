@@ -1,147 +1,210 @@
-    /* Gaya umum halaman */
-   body {
-      font-family: 'Poppins', sans-serif;
-      background-color: #1a75ff;
-      background-image: linear-gradient(62deg, #8EC5FC 0%, #E0C3FC 100%);
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      min-height: 100vh;
-      margin: 0;
-      padding: calc(var(--navbar-height, 72px) + 40px) 16px 40px;
-      box-sizing: border-box;
-    }
+/* 🌐 Root variable (tambahan agar calc() di body tidak error) */
+:root {
+  --navbar-height: 72px;
+}
 
-    /* Wrapper utama */
-    .wrapper {
-      background: #ffffff;
-      padding: 25px 30px;
-      border-radius: 15px;
-      box-shadow: 0 14px 34px rgba(38, 57, 77, 0.35);
-      width: 320px;
-      margin-top: 24px;
-    }
+/* 🌈 Gaya umum halaman */
+body {
+  font-family: 'Poppins', Arial, sans-serif;
+  background-color: #1a75ff;
+  background-image: linear-gradient(62deg, #8EC5FC 0%, #E0C3FC 100%);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 100vh;
+  margin: 0;
+  padding: calc(var(--navbar-height) + 40px) 16px 40px;
+  box-sizing: border-box;
+  transition: background-color 0.4s ease, color 0.4s ease;
+}
 
-    .title-text {
-      text-align: center;
-      margin-bottom: 15px;
-    }
+/* 🌟 Wrapper utama */
+.wrapper {
+  background: #ffffff;
+  padding: 25px 30px;
+  border-radius: 15px;
+  box-shadow: 0 14px 34px rgba(38, 57, 77, 0.35);
+  width: 320px;
+  margin-top: 24px;
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
 
-    .title {
-      font-size: 22px;
-      font-weight: 600;
-      color: #333;
-    }
+.wrapper:hover {
+  box-shadow: 0 16px 40px rgba(38, 57, 77, 0.45);
+  transform: translateY(-3px);
+}
 
-    /* Form */
-    form {
-      display: flex;
-      flex-direction: column;
-    }
+/* 🏷️ Judul form */
+.title-text {
+  text-align: center;
+  margin-bottom: 15px;
+}
 
-    .field {
-      position: relative;
-      display: flex;
-      flex-direction: column;
-    }
+.title {
+  font-size: 22px;
+  font-weight: 600;
+  color: #333;
+}
 
-    .field input {
-      width: 100%;
-      padding: 10px 12px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 14px;
-      outline: none;
-      background-color: #fffaf9;
-      box-sizing: border-box;
-    }
+/* 📝 Form field */
+form {
+  display: flex;
+  flex-direction: column;
+}
 
-    .password-field .password-input-wrapper {
-      position: relative;
-      display: flex;
-      align-items: center;
-    }
+.field {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 10px;
+}
 
-    .password-field input {
-      padding-right: 76px;
-    }
+.field input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  background-color: #fffaf9;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
 
-    .toggle-password {
-      position: absolute;
-      right: 12px;
-      background: transparent;
-      border: none;
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: #0d47a1;
-      cursor: pointer;
-      padding: 4px 6px;
-      border-radius: 6px;
-      transition: background 0.2s ease, color 0.2s ease;
-    }
+.field input:focus {
+  border-color: #0d47a1;
+  box-shadow: 0 0 0 2px rgba(13, 71, 161, 0.15);
+}
 
-    .toggle-password:hover,
-    .toggle-password:focus-visible {
-      background: rgba(13, 71, 161, 0.12);
-      color: #052970;
-      outline: none;
-    }
+/* 🔒 Field password + toggle */
+.password-field .password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
 
-    .error-message {
-      color: red;
-      font-size: 13px;
-      margin-bottom: 5px;
-      display: none;
-    }
+.password-field input {
+  padding-right: calc(1rem + 40px);
+}
 
-    /* Link lupa password */
-    .pass-link {
-      text-align: right;
-      margin-top: 10px;
-    }
+.toggle-password {
+  position: absolute;
+  right: 12px;
+  background: transparent;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #0d47a1;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: background 0.2s ease, color 0.2s ease;
+}
 
-    .pass-link a {
-      font-size: 13px;
-      color: #0d6efd;
-      text-decoration: none;
-    }
+.toggle-password:hover,
+.toggle-password:focus-visible {
+  background: rgba(13, 71, 161, 0.12);
+  color: #052970;
+  outline: none;
+}
 
-    .pass-link a:hover {
-      text-decoration: underline;
-    }
+/* ❌ Error message */
+.error-message {
+  color: red;
+  font-size: 13px;
+  margin-bottom: 5px;
+  display: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
 
-    /* Tombol login */
-    .btn {
-      position: relative;
-      margin-top: 10px;
-    }
+.error-message.show {
+  display: block;
+  opacity: 1;
+}
 
+/* 🔗 Link lupa password */
+.pass-link {
+  text-align: right;
+  margin-bottom: 5px;
+}
 
-    .btn input[type="submit"] {
-      width: 100%;
-      background: #0d47a1;
-      color: white;
-      border: none;
-      padding: 8px;
-      border-radius: 6px;
-      font-size: 14px;
-      cursor: pointer;
-    }
+.pass-link a {
+  font-size: 13px;
+  color: #0d6efd;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
 
-    .btn input[type="submit"]:hover {
-      background: #08357a;
-    }
+.pass-link a:hover {
+  text-decoration: underline;
+  color: #0b5ed7;
+}
 
-    body.dark {
-      background-color: #111b2e;
-      background-image: linear-gradient(160deg, #0a1a33 0%, #131c29 100%);
-      color: #f5f7fb;
-    }
+/* 🔘 Tombol login */
+.btn {
+  position: relative;
+  margin-top: 10px;
+}
 
-    body.dark .wrapper {
-      background: #1e2a3f;
-      color: #f5f7fb;
-      box-shadow: 0 18px 36px rgba(4, 10, 22, 0.55);
-    }
+.btn input[type="submit"] {
+  width: 100%;
+  background: #0d47a1;
+  color: white;
+  border: none;
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.1s ease;
+}
+
+.btn input[type="submit"]:hover {
+  background: #08357a;
+}
+
+.btn input[type="submit"]:active {
+  transform: scale(0.98);
+}
+
+/* 🌙 DARK MODE */
+body.dark {
+  background-color: #111b2e;
+  background-image: linear-gradient(160deg, #0a1a33 0%, #131c29 100%);
+  color: #f5f7fb;
+}
+
+body.dark .wrapper {
+  background: #1e2a3f;
+  color: #f5f7fb;
+  box-shadow: 0 18px 36px rgba(4, 10, 22, 0.55);
+}
+
+body.dark .title {
+  color: #f5f7fb;
+}
+
+body.dark .field input {
+  background-color: #2b3a57;
+  color: #fff;
+  border-color: #3c4c6e;
+}
+
+body.dark .field input:focus {
+  border-color: #6d9bff;
+  box-shadow: 0 0 0 2px rgba(109, 155, 255, 0.2);
+}
+
+body.dark .btn input[type="submit"] {
+  background: #2a4b8d;
+}
+
+body.dark .btn input[type="submit"]:hover {
+  background: #375fae;
+}
+
+body.dark .pass-link a {
+  color: #82aaff;
+}

@@ -793,7 +793,7 @@ app.post(
       return;
     }
 
-    const adminRow = await dbGet(
+    let adminRow = await dbGet(
       `
         SELECT id
         FROM users
@@ -804,8 +804,44 @@ app.post(
     );
 
     if (!adminRow) {
-      res.status(500).json({ error: "Belum ada akun admin terdaftar. Tambahkan pengguna dengan role 'admin' terlebih dahulu." });
-      return;
+      const defaultNik = process.env.ADMIN_DASHBOARD_NIK || "0000000000000000";
+      const defaultName = process.env.ADMIN_DASHBOARD_NAME || "Administrator Portal";
+      const defaultEmail = process.env.ADMIN_DASHBOARD_EMAIL || "admin@portal.local";
+      const defaultUsername = process.env.ADMIN_DASHBOARD_USERNAME || "admin";
+      const hashed = await argon2.hash(expected, ARGON2_OPTIONS);
+
+      await dbRun(
+        `
+          INSERT INTO users (nik, full_name, email, username, role, password_hash, password_algo, is_active, must_reset_password)
+          VALUES (?, ?, ?, ?, 'admin', ?, 'argon2id', 1, 0)
+          ON CONFLICT(nik) DO UPDATE SET
+            full_name = excluded.full_name,
+            email = excluded.email,
+            username = excluded.username,
+            role = excluded.role,
+            password_hash = excluded.password_hash,
+            password_algo = excluded.password_algo,
+            is_active = excluded.is_active,
+            must_reset_password = excluded.must_reset_password,
+            updated_at = (strftime('%Y-%m-%dT%H:%M:%fZ','now'));
+        `,
+        [defaultNik, defaultName, defaultEmail, defaultUsername, hashed]
+      );
+
+      adminRow = await dbGet(
+        `
+          SELECT id
+          FROM users
+          WHERE role = 'admin'
+          ORDER BY created_at ASC
+          LIMIT 1
+        `
+      );
+
+      if (!adminRow) {
+        res.status(500).json({ error: "Tidak dapat membuat akun admin default." });
+        return;
+      }
     }
 
     const session = await createSession(adminRow.id);
@@ -1224,7 +1260,10 @@ app.post(
           occupation,
           institution,
           address,
-          phone
+          phone,
+          ktp_path,
+          kk_path,
+          photo_path
         )
         VALUES (
           $userId,
@@ -1239,7 +1278,10 @@ app.post(
           $occupation,
           $institution,
           $address,
-          $phone
+          $phone,
+          $ktpPath,
+          $kkPath,
+          $photoPath
         )
         ON CONFLICT(user_id) DO UPDATE SET
           full_name = excluded.full_name,
@@ -1253,7 +1295,10 @@ app.post(
           occupation = excluded.occupation,
           institution = excluded.institution,
           address = excluded.address,
-          phone = excluded.phone
+          phone = excluded.phone,
+          ktp_path = excluded.ktp_path,
+          kk_path = excluded.kk_path,
+          photo_path = excluded.photo_path
       `,
       {
         $userId: userId,
@@ -1269,6 +1314,9 @@ app.post(
         $institution: institution ? String(institution).trim() : null,
         $address: address ? String(address).trim() : null,
         $phone: phone ? String(phone).trim() : null,
+        $ktpPath: ktpPath ? String(ktpPath).trim() : null,
+        $kkPath: kkPath ? String(kkPath).trim() : null,
+        $photoPath: photoPath ? String(photoPath).trim() : null,
       }
     );
 

@@ -1,0 +1,213 @@
+    :root {
+      --bg-color: #f7f9fc;
+      --text-color: #222;
+      --card-bg: #fff;
+      --header-bg: #1565c0;
+      --header-text: #fff;
+      --sidebar-bg: #1a237e;
+    }
+
+    body.dark-mode {
+      --bg-color: #0f1116;
+      --text-color: #f1f1f1;
+      --card-bg: #1e1e1e;
+      --header-bg: #101935;
+      --header-text: #f5f5f5;
+      --sidebar-bg: #141b33;
+    }
+
+    * {
+      box-sizing: border-box;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+    }
+
+    /* Header */
+    .header {
+      background-color: var(--header-bg);
+      color: var(--header-text);
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+    }
+
+    .menu-icon {
+      font-size: 26px;
+      cursor: pointer;
+    }
+
+    /* Profil kanan */
+    .profile-area {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .profile-btn {
+      background: none;
+      border: none;
+      color: var(--header-text);
+      font-size: 17px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 500;
+    }
+
+    .profile-pic {
+      width: 35px;
+      height: 35px;
+      border-radius: 50%;
+      background-color: #ddd;
+      object-fit: cover;
+      border: 2px solid white;
+    }
+
+    /* Dropdown menu akun */
+    .dropdown-menu {
+      display: none;
+      position: absolute;
+      top: 55px;
+      right: 0;
+      background: var(--card-bg);
+      border-radius: 10px;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+      width: 200px;
+      overflow: hidden;
+      z-index: 5;
+    }
+
+    .dropdown-menu a,
+    .dropdown-menu button {
+      display: block;
+      padding: 12px 15px;
+      text-decoration: none;
+      color: var(--text-color);
+      font-size: 15px;
+      width: 100%;
+      background: none;
+      border: none;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .dropdown-menu a:hover,
+    .dropdown-menu button:hover {
+      background-color: rgba(13, 71, 161, 0.1);
+    }
+
+    /* Sidebar */
+    .sidebar {
+      height: 100%;
+      width: 0;
+      position: fixed;
+      top: 0;
+      left: 0;
+      background-color: var(--sidebar-bg);
+      overflow-x: hidden;
+      transition: width 0.3s;
+      padding-top: 60px;
+      z-index: 2;
+    }
+
+    .sidebar a,
+    .dropdown-btn {
+      padding: 12px 25px;
+      text-decoration: none;
+      font-size: 16px;
+      color: #fff;
+      display: block;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .sidebar a:hover,
+    .dropdown-btn:hover {
+      background-color: #283593;
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 15px;
+      right: 20px;
+      font-size: 25px;
+      cursor: pointer;
+      color: #fff;
+    }
+
+    .dropdown-container {
+      display: none;
+      background-color: #303f9f;
+      padding-left: 20px;
+    }
+
+    /* Content */
+    .content {
+      padding: 25px;
+      transition: margin-left 0.3s;
+    }
+
+    h1 {
+      color: #1565c0;
+      text-align: center;
+      margin-bottom: 25px;
+    }
+
+    body.dark-mode h3 {
+      color: #90caf9;
+    }
+
+    /* Card */
+    .card-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      text-align: center;
+      transition: transform 0.2s;
+    }
+
+    .card:hover {
+      transform: scale(1.03);
+    }
+
+    .card img {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+      border-radius: 10px;
+    }
+
+    .card h4 {
+      margin: 15px 0 10px;
+      color: #1565c0;
+    }
+
+    body.dark-mode .card h4 {
+      color: #90caf9;
+    }
+
+    .card p {
+      font-size: 14px;
+      color: var(--text-color);
+    }
