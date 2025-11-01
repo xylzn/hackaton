@@ -175,7 +175,7 @@ body.dark .table-bordered {
 
 .dashboard-title {
   font-weight: 600;
-  color: #111; /* tetap hitam seperti permintaan */
+  color: #ffffff; 
 }
 
 .admin-header .btn {

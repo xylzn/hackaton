@@ -1,142 +1,115 @@
-* {
-  box-sizing: border-box;
-  font-family: "Poppins", sans-serif;
-}
-
 body {
-  background: #f4f6f9;
+  background-color: #f4f8fb;
+  font-family: 'Poppins', sans-serif;
+  color: #333;
   margin: 0;
   padding: 0;
 }
 
-.container {
-  width: 90%;
-  max-width: 900px;
-  margin: 40px auto;
-  background: white;
-  padding: 25px;
-  border-radius: 10px;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+body.dark {
+  background-color: #1a1a1a;
+  color: #fff;
 }
 
-/* Header */
-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 25px;
-}
-
-header h2 {
-  color: #004aad;
-}
-
-#logoutBtn {
-  background: #e74c3c;
+/* HEADER */
+.admin-header {
+  background-color: #0d6efd;
   color: white;
-  border: none;
-  padding: 8px 15px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background 0.2s;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
-#logoutBtn:hover {
-  background: #c0392b;
+.admin-header .logo-icon {
+  width: 28px;
+  height: 28px;
 }
 
-/* Form Tambah */
-.input-section {
-  margin-bottom: 30px;
+.admin-header .dashboard-title {
+  font-weight: 600;
+  color: #fff;
 }
 
-.input-section h3 {
-  color: #004aad;
-  margin-bottom: 10px;
+.admin-header .profile-pic {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid white;
+  object-fit: cover;
 }
 
-#addForm {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+/* CONTAINER */
+.container {
+  background-color: #fff;
+  border-radius: 15px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
-#addForm input {
-  flex: 1;
-  padding: 8px;
-  border-radius: 5px;
+body.dark .container {
+  background-color: #2b2d33;
+  color: #eee;
+}
+
+/* FORM */
+.form-label {
+  font-weight: 500;
+}
+
+.form-control {
+  border-radius: 10px;
   border: 1px solid #ccc;
 }
 
-#addForm button {
-  background: #004aad;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  padding: 8px 15px;
-  cursor: pointer;
+.form-control:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 6px rgba(13, 110, 253, 0.3);
 }
 
-#addForm button:hover {
-  background: #003b8e;
-}
-
-/* Alert */
-#alertBox {
-  margin-top: 10px;
-  font-size: 14px;
-  text-align: center;
-}
-
+/* ALERT */
 #alertBox.success {
-  color: #27ae60;
+  color: #28a745;
+  font-weight: 600;
 }
 
 #alertBox.error {
-  color: #e74c3c;
+  color: #dc3545;
+  font-weight: 600;
 }
 
-/* Tabel */
-.table-section h3 {
-  color: #004aad;
+/* TABLE */
+.table {
+  border-radius: 10px;
+  overflow: hidden;
 }
 
-table {
-  width: 100%;
-  border-collapse: collapse;
+.table th {
+  background-color: #007bff;
+  color: #fff;
 }
 
-th, td {
-  padding: 10px;
-  border: 1px solid #ddd;
-  text-align: center;
+.table tbody tr:hover {
+  background-color: #f0f8ff;
+  transition: 0.2s;
 }
 
-th {
-  background: #004aad;
-  color: white;
-}
-
-tr:nth-child(even) {
-  background: #f2f2f2;
-}
-
-button.delete {
-  background: #e74c3c;
+/* TOMBOL DELETE */
+.btn-delete {
+  background-color: #e74c3c;
   color: white;
   border: none;
-  border-radius: 5px;
+  border-radius: 6px;
   padding: 5px 10px;
   cursor: pointer;
 }
 
-button.delete:hover {
-  background: #c0392b;
+.btn-delete:hover {
+  background-color: #c0392b;
 }
 
-/* Responsif */
-@media (max-width: 600px) {
-  #addForm {
-    flex-direction: column;
+/* RESPONSIF */
+@media (max-width: 768px) {
+  .container {
+    padding: 15px;
   }
 }

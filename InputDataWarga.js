@@ -1,82 +1,62 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const addForm = document.getElementById("addForm");
-  const nikInput = document.getElementById("nik");
-  const namaInput = document.getElementById("nama");
-  const tableBody = document.querySelector("#dataTable tbody");
-  const alertBox = document.getElementById("alertBox");
-  const logoutBtn = document.getElementById("logoutBtn");
+document.getElementById("addForm").addEventListener("submit", function(e) {
+      e.preventDefault();
 
-  let dataWarga = JSON.parse(localStorage.getItem("dataWarga")) || [];
+      const nik = document.getElementById("nik").value.trim();
+      const nama = document.getElementById("nama").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value.trim();
 
-  function showAlert(message, type) {
-    alertBox.textContent = message;
-    alertBox.className = type;
-    setTimeout(() => (alertBox.textContent = ""), 2000);
-  }
+      if (nik.length !== 16) {
+        showAlert("❌ NIK harus 16 digit!", "danger");
+        return;
+      }
 
-  function renderTable() {
-    tableBody.innerHTML = "";
-    if (dataWarga.length === 0) {
-      tableBody.innerHTML = `<tr><td colspan="4">Belum ada data</td></tr>`;
-      return;
-    }
+      const dataWarga = JSON.parse(localStorage.getItem("dataWarga")) || [];
 
-    dataWarga.forEach((w, index) => {
-      const row = document.createElement("tr");
-      row.innerHTML = `
-        <td>${index + 1}</td>
-        <td>${w.nik}</td>
-        <td>${w.nama}</td>
-        <td><button class="delete" data-index="${index}">Hapus</button></td>
-      `;
-      tableBody.appendChild(row);
-    });
-  }
+      if (dataWarga.some(w => w.nik === nik)) {
+        showAlert("⚠️ NIK sudah terdaftar!", "warning");
+        return;
+      }
 
-  // Tambah Data
-  addForm.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const nik = nikInput.value.trim();
-    const nama = namaInput.value.trim();
-
-    if (!/^\d{16}$/.test(nik)) {
-      showAlert("❌ NIK harus 16 digit angka!", "error");
-      return;
-    }
-
-    if (nama === "") {
-      showAlert("❌ Nama tidak boleh kosong!", "error");
-      return;
-    }
-
-    if (dataWarga.some((w) => w.nik === nik)) {
-      showAlert("⚠️ NIK sudah terdaftar!", "error");
-      return;
-    }
-
-    dataWarga.push({ nik, nama, password: "Password@123" });
-    localStorage.setItem("dataWarga", JSON.stringify(dataWarga));
-    renderTable();
-    addForm.reset();
-    showAlert("✅ Data berhasil disimpan!", "success");
-  });
-
-  // Hapus Data
-  tableBody.addEventListener("click", (e) => {
-    if (e.target.classList.contains("delete")) {
-      const index = e.target.getAttribute("data-index");
-      dataWarga.splice(index, 1);
+      // Simpan ke localStorage
+      dataWarga.push({ nik, nama, email, password });
       localStorage.setItem("dataWarga", JSON.stringify(dataWarga));
-      renderTable();
-      showAlert("🗑️ Data berhasil dihapus!", "success");
+
+      showAlert("✅ Data berhasil disimpan!", "success");
+
+      // Pindah ke dashboard setelah 1 detik
+      setTimeout(() => {
+        window.location.href = "dashboard_admin.html";
+      }, 1000);
+    });
+
+    function showAlert(message, type) {
+      const alertBox = document.getElementById("alertBox");
+      alertBox.innerHTML = `<div class="alert alert-${type}" role="alert">${message}</div>`;
     }
-  });
 
-  // Logout
-  logoutBtn.addEventListener("click", () => {
-    localStorage.removeItem("loggedInUser");
-    window.location.href = "login.html";
-  });
+    // Fungsi pencarian nama/NIK
+    function filterData() {
+        const searchValue = searchInput.value.toLowerCase();
+        const allData = JSON.parse(localStorage.getItem("dataWarga")) || [];
+        const filtered = allData.filter(w =>
+        w.nama.toLowerCase().includes(searchValue) ||
+        w.nik.toLowerCase().includes(searchValue)
+        );
+        renderData(filtered);
+    }
 
-  renderTable();
-});
+    // Fungsi refresh tabel
+    function refreshTable() {
+        searchInput.value = "";
+        renderData();
+    }
+
+    // Logout
+    function logout() {
+        localStorage.removeItem("isLoggedIn");
+        window.location.href = "login.html";
+    }
+
+    // Render saat halaman dibuka
+    document.addEventListener("DOMContentLoaded", renderData);
