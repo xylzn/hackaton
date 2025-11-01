@@ -18,3 +18,4 @@ data/seed-users.json
 # OS noise
 .DS_Store
 Thumbs.db
+*.db

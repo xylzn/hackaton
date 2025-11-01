@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login Admin · Portal Data Warga</title>
+  <link rel="stylesheet" href="../css/admin-login.css">
+  <script src="../js/admin-login.js" defer></script>
+</head>
+<body>
+  <main class="admin-login-wrapper">
+    <section class="admin-login-card">
+      <header class="admin-login-header">
+        <p class="badge">Akses Administrator</p>
+        <h1>Masuk Dashboard Admin</h1>
+        <p class="lead">
+          Masukkan password khusus administrator untuk memantau data warga. Informasi login ini tidak dibagikan ke operator.
+        </p>
+      </header>
+
+      <div id="adminLoginAlert" class="alert d-none" role="alert"></div>
+
+      <form id="adminLoginForm">
+        <label for="adminPassword" class="form-label">Password Admin</label>
+        <div class="password-wrapper">
+          <input
+            type="password"
+            id="adminPassword"
+            class="form-control"
+            placeholder="Masukkan password admin"
+            autocomplete="off"
+            required
+          >
+          <button type="button" id="toggleAdminPassword" class="toggle-password" aria-label="Tampilkan password">
+            Lihat
+          </button>
+        </div>
+        <button type="submit" class="btn btn-primary w-100 mt-3" id="adminLoginButton">Masuk</button>
+        <a href="/html/login.html" class="back-link">← Kembali ke portal utama</a>
+      </form>
+    </section>
+  </main>
+</body>
+</html>

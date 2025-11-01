@@ -1,6 +1,7 @@
 "use strict";
 
 (() => {
+  const DEFAULT_PHOTO_URL = "https://i.imgur.com/UQ0Q3mU.png";
   const sendLogoutBeacon = () => {
     const url = "/api/auth/logout";
     try {
@@ -107,11 +108,28 @@
     element.value = value ? String(value) : "";
   };
 
-  const collectPayload = () => {
+  const collectPayload = async () => {
     const valueOf = (id) => {
       const el = document.getElementById(id);
       return el ? el.value.trim() : "";
     };
+
+    const fotoPreview = document.getElementById("fotoPreview");
+    const photoFile = document.getElementById("photoFile");
+
+    let photoPath = fotoPreview?.src || null;
+    if (photoFile?.files?.[0]) {
+      try {
+        photoPath = await fileToDataUrl(photoFile.files[0]);
+      } catch (error) {
+        console.error("Gagal membaca berkas foto:", error);
+        photoPath = null;
+      }
+    }
+
+    if (photoPath === DEFAULT_PHOTO_URL) {
+      photoPath = null;
+    }
 
     return {
       fullName: valueOf("nama"),
@@ -125,6 +143,7 @@
       institution: valueOf("institution"),
       address: valueOf("address"),
       phone: valueOf("phone"),
+      photoPath,
     };
   };
 
@@ -144,6 +163,15 @@
     setFieldValue("address", profile.address || "");
     setFieldValue("email", profile.email || user.email || "");
     setFieldValue("phone", profile.phone || "");
+
+    const fotoPreview = document.getElementById("fotoPreview");
+    if (fotoPreview) {
+      if (profile.photoPath) {
+        fotoPreview.src = profile.photoPath;
+      } else {
+        fotoPreview.src = DEFAULT_PHOTO_URL;
+      }
+    }
 
     if (user.nik) {
       localStorage.setItem("nik", user.nik);

@@ -51,7 +51,39 @@ const PROFILE_FIELD_DEFINITIONS = [
   { key: "phone", column: "phone" },
   { key: "email", column: "email" },
   { key: "photoPath", column: "photo_path" },
+  { key: "ktpPath", column: "ktp_path" },
+  { key: "kkPath", column: "kk_path" },
 ];
+
+const ADMIN_PROFILE_SELECT = `
+  SELECT
+    u.id AS user_id,
+    u.nik AS user_nik,
+    u.full_name AS user_full_name,
+    u.email AS user_email,
+    u.role AS user_role,
+    u.is_active AS user_is_active,
+    u.must_reset_password AS user_must_reset_password,
+    u.last_login_at AS user_last_login_at,
+    cp.full_name AS cp_full_name,
+    cp.nik AS cp_nik,
+    cp.birth_place AS cp_birth_place,
+    cp.birth_date AS cp_birth_date,
+    cp.gender AS cp_gender,
+    cp.religion AS cp_religion,
+    cp.education AS cp_education,
+    cp.occupation AS cp_occupation,
+    cp.institution AS cp_institution,
+    cp.address AS cp_address,
+    cp.phone AS cp_phone,
+    cp.email AS cp_email,
+    cp.ktp_path AS cp_ktp_path,
+    cp.kk_path AS cp_kk_path,
+    cp.photo_path AS cp_photo_path,
+    cp.updated_at AS cp_updated_at
+  FROM users u
+  LEFT JOIN citizen_profiles cp ON cp.user_id = u.id
+`;
 
 const PROFILE_COMPLETION_FIELDS = [
   { key: "fullName", source: "user", label: "Nama Lengkap" },
@@ -98,6 +130,18 @@ function dbRun(sql, params = []) {
         return;
       }
       resolve(this);
+    });
+  });
+}
+
+function dbAll(sql, params = []) {
+  return new Promise((resolve, reject) => {
+    db.all(sql, params, (err, rows) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      resolve(rows);
     });
   });
 }
@@ -371,6 +415,16 @@ function requireAuth(req, res, next) {
   next();
 }
 
+function requireRole(role) {
+  return (req, res, next) => {
+    if (!req.auth || !req.auth.user || req.auth.user.role !== role) {
+      res.status(403).json({ error: "Akses ditolak. Hak akses tidak mencukupi." });
+      return;
+    }
+    next();
+  };
+}
+
 function asyncHandler(handler) {
   return (req, res, next) => {
     Promise.resolve(handler(req, res, next)).catch(next);
@@ -480,6 +534,42 @@ async function getProfilePayload(userId) {
   );
 
   const profile = mapProfileRow(profileRow);
+  const completion = computeProfileCompletion(user, profile);
+
+  return { user, profile, completion };
+}
+
+function mapProfileFromJoinedRow(row) {
+  if (!row) {
+    return mapProfileRow(null);
+  }
+  const profileRow = {};
+  for (const definition of PROFILE_FIELD_DEFINITIONS) {
+    const aliasKey = `cp_${definition.column}`;
+    profileRow[definition.column] = Object.prototype.hasOwnProperty.call(row, aliasKey)
+      ? row[aliasKey]
+      : null;
+  }
+  profileRow.updated_at = row.cp_updated_at || null;
+  return mapProfileRow(profileRow);
+}
+
+function mapJoinedRowToPayload(row) {
+  if (!row) {
+    return null;
+  }
+
+  const user = mapUserResponse({
+    nik: row.user_nik,
+    fullName: row.user_full_name || row.cp_full_name,
+    email: row.user_email,
+    role: row.user_role,
+    isActive: row.user_is_active === 1,
+    mustResetPassword: row.user_must_reset_password === 1,
+    lastLoginAt: row.user_last_login_at,
+  });
+
+  const profile = mapProfileFromJoinedRow(row);
   const completion = computeProfileCompletion(user, profile);
 
   return { user, profile, completion };
@@ -683,6 +773,83 @@ app.post(
       session: {
         expiresAt: session.expiresAt,
       },
+    });
+  })
+);
+
+app.post(
+  "/api/admin/login",
+  asyncHandler(async (req, res) => {
+    const password = req.body?.password;
+    const expected = process.env.ADMIN_DASHBOARD_PASSWORD || "Admin123!";
+
+    if (!password) {
+      res.status(400).json({ error: "Password wajib diisi." });
+      return;
+    }
+
+    if (password !== expected) {
+      res.status(401).json({ error: "Password admin tidak sesuai." });
+      return;
+    }
+
+    let adminRow = await dbGet(
+      `
+        SELECT id
+        FROM users
+        WHERE role = 'admin'
+        ORDER BY created_at ASC
+        LIMIT 1
+      `
+    );
+
+    if (!adminRow) {
+      const defaultNik = process.env.ADMIN_DASHBOARD_NIK || "0000000000000000";
+      const defaultName = process.env.ADMIN_DASHBOARD_NAME || "Administrator Portal";
+      const defaultEmail = process.env.ADMIN_DASHBOARD_EMAIL || "admin@portal.local";
+      const defaultUsername = process.env.ADMIN_DASHBOARD_USERNAME || "admin";
+      const hashed = await argon2.hash(expected, ARGON2_OPTIONS);
+
+      await dbRun(
+        `
+          INSERT INTO users (nik, full_name, email, username, role, password_hash, password_algo, is_active, must_reset_password)
+          VALUES (?, ?, ?, ?, 'admin', ?, 'argon2id', 1, 0)
+          ON CONFLICT(nik) DO UPDATE SET
+            full_name = excluded.full_name,
+            email = excluded.email,
+            username = excluded.username,
+            role = excluded.role,
+            password_hash = excluded.password_hash,
+            password_algo = excluded.password_algo,
+            is_active = excluded.is_active,
+            must_reset_password = excluded.must_reset_password,
+            updated_at = (strftime('%Y-%m-%dT%H:%M:%fZ','now'));
+        `,
+        [defaultNik, defaultName, defaultEmail, defaultUsername, hashed]
+      );
+
+      adminRow = await dbGet(
+        `
+          SELECT id
+          FROM users
+          WHERE role = 'admin'
+          ORDER BY created_at ASC
+          LIMIT 1
+        `
+      );
+
+      if (!adminRow) {
+        res.status(500).json({ error: "Tidak dapat membuat akun admin default." });
+        return;
+      }
+    }
+
+    const session = await createSession(adminRow.id);
+    setSessionCookie(res, session.token, session.expiresAt);
+
+    res.json({
+      message: "Login admin berhasil.",
+      redirect: "/html/dashboard_admin.html",
     });
   })
 );
@@ -927,6 +1094,69 @@ app.post(
 );
 
 app.get(
+  "/api/admin/profiles",
+  requireAuth,
+  requireRole("admin"),
+  asyncHandler(async (req, res) => {
+    const searchRaw = req.query?.q ? String(req.query.q).trim().toLowerCase() : "";
+    const params = [];
+    let whereClause = "";
+
+    if (searchRaw) {
+      const like = `%${searchRaw}%`;
+      whereClause = `
+        WHERE
+          LOWER(u.nik) LIKE ?
+          OR LOWER(u.full_name) LIKE ?
+          OR LOWER(COALESCE(cp.full_name, '')) LIKE ?
+      `;
+      params.push(like, like, like);
+    }
+
+    const rows = await dbAll(`${ADMIN_PROFILE_SELECT} ${whereClause} ORDER BY u.created_at DESC`, params);
+
+    const items = rows.map((row) => {
+      const payload = mapJoinedRowToPayload(row);
+      return {
+        id: row.user_id,
+        nik: payload.user.nik,
+        fullName: payload.user.fullName || payload.profile.fullName || "-",
+        email: payload.user.email || payload.profile.email || "-",
+        role: payload.user.role,
+        isActive: payload.user.isActive,
+        lastLoginAt: payload.user.lastLoginAt,
+        completion: Math.round(payload.completion.percentage || 0),
+        updatedAt: payload.profile.updatedAt,
+      };
+    });
+
+    res.json({ items });
+  })
+);
+
+app.get(
+  "/api/admin/profiles/:id",
+  requireAuth,
+  requireRole("admin"),
+  asyncHandler(async (req, res) => {
+    const userId = Number.parseInt(req.params.id, 10);
+    if (!Number.isFinite(userId)) {
+      res.status(400).json({ error: "ID pengguna tidak valid." });
+      return;
+    }
+
+    const row = await dbGet(`${ADMIN_PROFILE_SELECT} WHERE u.id = ?`, [userId]);
+    if (!row) {
+      res.status(404).json({ error: "Data pengguna tidak ditemukan." });
+      return;
+    }
+
+    const payload = mapJoinedRowToPayload(row);
+    res.json(payload);
+  })
+);
+
+app.get(
   "/api/auth/me",
   requireAuth,
   asyncHandler(async (req, res) => {
@@ -1030,7 +1260,10 @@ app.post(
           occupation,
           institution,
           address,
-          phone
+          phone,
+          ktp_path,
+          kk_path,
+          photo_path
         )
         VALUES (
           $userId,
@@ -1045,7 +1278,10 @@ app.post(
           $occupation,
           $institution,
           $address,
-          $phone
+          $phone,
+          $ktpPath,
+          $kkPath,
+          $photoPath
         )
         ON CONFLICT(user_id) DO UPDATE SET
           full_name = excluded.full_name,
@@ -1059,7 +1295,10 @@ app.post(
           occupation = excluded.occupation,
           institution = excluded.institution,
           address = excluded.address,
-          phone = excluded.phone
+          phone = excluded.phone,
+          ktp_path = excluded.ktp_path,
+          kk_path = excluded.kk_path,
+          photo_path = excluded.photo_path
       `,
       {
         $userId: userId,
@@ -1075,6 +1314,9 @@ app.post(
         $institution: institution ? String(institution).trim() : null,
         $address: address ? String(address).trim() : null,
         $phone: phone ? String(phone).trim() : null,
+        $ktpPath: ktpPath ? String(ktpPath).trim() : null,
+        $kkPath: kkPath ? String(kkPath).trim() : null,
+        $photoPath: photoPath ? String(photoPath).trim() : null,
       }
     );
 
