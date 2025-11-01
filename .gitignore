@@ -1,0 +1,20 @@
+# Node & tooling
+node_modules/
+npm-debug.log*
+pnpm-debug.log*
+
+# Environment
+.env
+.env.*
+
+# Database artifacts & private storage
+data/citizen_security.db
+data/citizen_security.db-*
+data/storage/
+
+# Seed data (gunakan berkas contoh di repo, simpan data asli secara lokal)
+data/seed-users.json
+
+# OS noise
+.DS_Store
+Thumbs.db

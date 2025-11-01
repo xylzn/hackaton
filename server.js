@@ -9,12 +9,52 @@ const express = require("express");
 const helmet = require("helmet");
 const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
+const argon2 = require("argon2");
 
 const { initializeDatabase, getConnection } = require("./db");
 
 const PORT = process.env.PORT || 3000;
 const STATIC_DIR = path.join(__dirname, "public");
 const DATA_STORAGE_DIR = path.join(__dirname, "data", "storage");
+const SESSION_COOKIE_NAME = "sid";
+const DEFAULT_SESSION_TTL_MS = 5 * 60 * 1000; // 5 menit
+const PARSED_SESSION_TTL = Number(process.env.SESSION_TTL_MS);
+const SESSION_TTL_MS =
+  Number.isFinite(PARSED_SESSION_TTL) && PARSED_SESSION_TTL > 0
+    ? PARSED_SESSION_TTL
+    : DEFAULT_SESSION_TTL_MS;
+const COOKIE_SECURE = process.env.NODE_ENV === "production";
+
+const PROFILE_FIELD_DEFINITIONS = [
+  { key: "fullName", column: "full_name" },
+  { key: "nik", column: "nik" },
+  { key: "birthPlace", column: "birth_place" },
+  { key: "birthDate", column: "birth_date" },
+  { key: "gender", column: "gender" },
+  { key: "religion", column: "religion" },
+  { key: "education", column: "education" },
+  { key: "occupation", column: "occupation" },
+  { key: "institution", column: "institution" },
+  { key: "address", column: "address" },
+  { key: "phone", column: "phone" },
+  { key: "email", column: "email" },
+  { key: "photoPath", column: "photo_path" },
+];
+
+const PROFILE_COMPLETION_FIELDS = [
+  { key: "fullName", source: "user", label: "Nama Lengkap" },
+  { key: "nik", source: "user", label: "NIK" },
+  { key: "email", source: "user", label: "Email" },
+  { key: "birthPlace", source: "profile", label: "Tempat Lahir" },
+  { key: "birthDate", source: "profile", label: "Tanggal Lahir" },
+  { key: "gender", source: "profile", label: "Jenis Kelamin" },
+  { key: "religion", source: "profile", label: "Agama" },
+  { key: "education", source: "profile", label: "Pendidikan" },
+  { key: "occupation", source: "profile", label: "Pekerjaan" },
+  { key: "institution", source: "profile", label: "Instansi" },
+  { key: "address", source: "profile", label: "Alamat" },
+  { key: "phone", source: "profile", label: "Nomor Telepon" },
+];
 
 function ensureStorageDir() {
   if (!fs.existsSync(DATA_STORAGE_DIR)) {
@@ -25,6 +65,317 @@ function ensureStorageDir() {
 initializeDatabase();
 ensureStorageDir();
 const db = getConnection();
+
+function dbGet(sql, params = []) {
+  return new Promise((resolve, reject) => {
+    db.get(sql, params, (err, row) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      resolve(row);
+    });
+  });
+}
+
+function dbRun(sql, params = []) {
+  return new Promise((resolve, reject) => {
+    db.run(sql, params, function runCallback(err) {
+      if (err) {
+        reject(err);
+        return;
+      }
+      resolve(this);
+    });
+  });
+}
+
+function sanitizeNik(rawNik = "") {
+  return String(rawNik).replace(/\D/g, "");
+}
+
+function hashSessionToken(token) {
+  return crypto.createHash("sha256").update(token).digest("hex");
+}
+
+async function createSession(userId) {
+  const token = crypto.randomBytes(32).toString("hex");
+  const hashedToken = hashSessionToken(token);
+  const expiresAtDate = new Date(Date.now() + SESSION_TTL_MS);
+  const expiresAtIso = expiresAtDate.toISOString();
+
+  await dbRun(
+    `
+      INSERT INTO sessions (user_id, session_hash, expires_at, revoked_at)
+      VALUES (?, ?, ?, NULL)
+    `,
+    [userId, hashedToken, expiresAtIso]
+  );
+
+  return {
+    token,
+    hashedToken,
+    expiresAt: expiresAtIso,
+  };
+}
+
+async function recordLoginAttempt({
+  userId,
+  nik,
+  ipAddress,
+  userAgent,
+  isSuccess,
+}) {
+  try {
+    await dbRun(
+      `
+        INSERT INTO login_attempts (user_id, username, ip_address, user_agent, is_success)
+        VALUES ($userId, $username, $ipAddress, $userAgent, $isSuccess)
+      `,
+      {
+        $userId: userId || null,
+        $username: nik || null,
+        $ipAddress: ipAddress || null,
+        $userAgent: userAgent || null,
+        $isSuccess: isSuccess ? 1 : 0,
+      }
+    );
+  } catch (error) {
+    console.error("Gagal mencatat login attempt:", error.message);
+  }
+}
+
+function setSessionCookie(res, token, expiresAtIso) {
+  res.cookie(SESSION_COOKIE_NAME, token, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: COOKIE_SECURE,
+    expires: new Date(expiresAtIso),
+    path: "/",
+  });
+}
+
+function clearSessionCookie(res) {
+  res.clearCookie(SESSION_COOKIE_NAME, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: COOKIE_SECURE,
+    path: "/",
+  });
+}
+
+function extractSessionToken(req) {
+  const cookieHeader = req.headers.cookie;
+  if (!cookieHeader) {
+    return null;
+  }
+
+  const cookies = cookieHeader
+    .split(";")
+    .map((cookie) => cookie.trim())
+    .filter(Boolean);
+
+  for (const cookie of cookies) {
+    const [name, value] = cookie.split("=");
+    if (name === SESSION_COOKIE_NAME) {
+      return value;
+    }
+  }
+
+  return null;
+}
+
+async function findActiveSession(token) {
+  if (!token) {
+    return null;
+  }
+
+  const hashedToken = hashSessionToken(token);
+  const row = await dbGet(
+    `
+      SELECT
+        s.id AS session_id,
+        s.user_id,
+        s.expires_at,
+        u.nik,
+        u.full_name,
+        u.email,
+        u.role,
+        u.is_active,
+        u.must_reset_password,
+        u.last_login_at
+      FROM sessions s
+      INNER JOIN users u ON u.id = s.user_id
+      WHERE s.session_hash = ?
+        AND s.revoked_at IS NULL
+        AND datetime(s.expires_at) > datetime('now')
+    `,
+    [hashedToken]
+  );
+
+  if (!row) {
+    return null;
+  }
+
+  return {
+    session: {
+      id: row.session_id,
+      userId: row.user_id,
+      expiresAt: row.expires_at,
+    },
+    user: {
+      id: row.user_id,
+      nik: row.nik,
+      fullName: row.full_name,
+      email: row.email,
+      role: row.role,
+      isActive: row.is_active === 1,
+      mustResetPassword: row.must_reset_password === 1,
+      lastLoginAt: row.last_login_at,
+    },
+  };
+}
+
+async function hydrateSessionContext(req, res) {
+  if (!req.path.startsWith("/api/")) {
+    return;
+  }
+
+  const token = extractSessionToken(req);
+  if (!token) {
+    return;
+  }
+
+  const activeSession = await findActiveSession(token);
+  if (!activeSession) {
+    clearSessionCookie(res);
+    return;
+  }
+
+  req.auth = activeSession;
+}
+
+function requireAuth(req, res, next) {
+  if (!req.auth || !req.auth.user || !req.auth.session) {
+    res.status(401).json({ error: "Sesi login tidak ditemukan atau sudah kedaluwarsa." });
+    return;
+  }
+  next();
+}
+
+function asyncHandler(handler) {
+  return (req, res, next) => {
+    Promise.resolve(handler(req, res, next)).catch(next);
+  };
+}
+
+function mapUserResponse(user = {}) {
+  return {
+    nik: user.nik || null,
+    fullName: user.fullName || null,
+    email: user.email || null,
+    role: user.role || null,
+    isActive: Boolean(user.isActive),
+    mustResetPassword: Boolean(user.mustResetPassword),
+    lastLoginAt: user.lastLoginAt || null,
+  };
+}
+
+function mapProfileRow(row) {
+  const mapped = {};
+  for (const field of PROFILE_FIELD_DEFINITIONS) {
+    mapped[field.key] = row && field.column in row ? row[field.column] : null;
+  }
+  mapped.updatedAt = row ? row.updated_at || null : null;
+  return mapped;
+}
+
+function computeProfileCompletion(user, profile) {
+  if (!Array.isArray(PROFILE_COMPLETION_FIELDS) || PROFILE_COMPLETION_FIELDS.length === 0) {
+    return {
+      percentage: 0,
+      totalFields: 0,
+      filledFields: 0,
+      details: [],
+    };
+  }
+
+  const details = [];
+  let filledFields = 0;
+
+  for (const field of PROFILE_COMPLETION_FIELDS) {
+    let value = null;
+    if (field.source === "profile") {
+      value = profile[field.key];
+    } else if (field.source === "user") {
+      value = user[field.key];
+    }
+
+    const isFilled = value != null && String(value).trim() !== "";
+    if (isFilled) {
+      filledFields += 1;
+    }
+
+    details.push({
+      key: field.key,
+      label: field.label,
+      filled: isFilled,
+    });
+  }
+
+  const totalFields = PROFILE_COMPLETION_FIELDS.length;
+  const percentage = totalFields === 0 ? 0 : (filledFields / totalFields) * 100;
+
+  return {
+    percentage,
+    totalFields,
+    filledFields,
+    details,
+  };
+}
+
+async function getUserRowById(userId) {
+  return dbGet(
+    `
+      SELECT id, nik, full_name, email, role, is_active, must_reset_password, last_login_at
+      FROM users
+      WHERE id = ?
+    `,
+    [userId]
+  );
+}
+
+async function getProfilePayload(userId) {
+  const userRow = await getUserRowById(userId);
+
+  if (!userRow) {
+    return null;
+  }
+
+  const user = mapUserResponse({
+    nik: userRow.nik,
+    fullName: userRow.full_name,
+    email: userRow.email,
+    role: userRow.role,
+    isActive: userRow.is_active === 1,
+    mustResetPassword: userRow.must_reset_password === 1,
+    lastLoginAt: userRow.last_login_at,
+  });
+
+  const profileRow = await dbGet(
+    `
+      SELECT *
+      FROM citizen_profiles
+      WHERE user_id = ?
+    `,
+    [userId]
+  );
+
+  const profile = mapProfileRow(profileRow);
+  const completion = computeProfileCompletion(user, profile);
+
+  return { user, profile, completion };
+}
 
 const app = express();
 
@@ -47,6 +398,11 @@ app.use(
 
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: false }));
+app.use((req, res, next) => {
+  hydrateSessionContext(req, res)
+    .then(() => next())
+    .catch(next);
+});
 app.use(
   morgan("combined", {
     stream: {
@@ -74,12 +430,275 @@ app.get("/api/health", (_req, res) => {
   });
 });
 
-// Endpoint placeholder agar arsitektur auth jelas namun belum diimplementasikan.
-app.post("/api/auth/login", (_req, res) => {
-  res.status(501).json({
-    error: "Login belum diimplementasikan. Validasi NIK + kata sandi (hash argon2id), aktifkan rate limiting, dan catat audit.",
-  });
-});
+app.post(
+  "/api/auth/login",
+  asyncHandler(async (req, res) => {
+    const rawNik = req.body?.nik;
+    const password = req.body?.password;
+
+    if (!rawNik || typeof rawNik !== "string" || !password) {
+      res.status(400).json({ error: "NIK dan kata sandi wajib diisi." });
+      return;
+    }
+
+    const nik = sanitizeNik(rawNik);
+
+    if (nik.length !== 16) {
+      res.status(400).json({ error: "Format NIK tidak valid. Pastikan terdiri dari 16 digit." });
+      return;
+    }
+
+    const userRow = await dbGet(
+      `
+        SELECT id, nik, full_name, email, role, is_active, must_reset_password, password_hash, last_login_at
+        FROM users
+        WHERE nik = ?
+      `,
+      [nik]
+    );
+
+    const ipForwarded = req.headers["x-forwarded-for"];
+    const ipAddress = Array.isArray(ipForwarded)
+      ? ipForwarded[0]
+      : (ipForwarded || "").split(",")[0].trim() || req.ip;
+    const userAgentRaw = req.headers["user-agent"] || "";
+    const userAgent = userAgentRaw.slice(0, 255);
+
+    if (!userRow || userRow.is_active !== 1) {
+      await recordLoginAttempt({
+        userId: userRow ? userRow.id : null,
+        nik,
+        ipAddress,
+        userAgent,
+        isSuccess: false,
+      });
+      res.status(401).json({ error: "NIK atau kata sandi tidak sesuai." });
+      return;
+    }
+
+    const isPasswordValid = await argon2.verify(userRow.password_hash, password);
+
+    if (!isPasswordValid) {
+      await recordLoginAttempt({
+        userId: userRow.id,
+        nik,
+        ipAddress,
+        userAgent,
+        isSuccess: false,
+      });
+      res.status(401).json({ error: "NIK atau kata sandi tidak sesuai." });
+      return;
+    }
+
+    const loginTimestamp = new Date().toISOString();
+    const session = await createSession(userRow.id);
+
+    await Promise.all([
+      dbRun("UPDATE users SET last_login_at = ? WHERE id = ?", [
+        loginTimestamp,
+        userRow.id,
+      ]),
+      recordLoginAttempt({
+        userId: userRow.id,
+        nik,
+        ipAddress,
+        userAgent,
+        isSuccess: true,
+      }),
+    ]);
+
+    setSessionCookie(res, session.token, session.expiresAt);
+
+    const responseUser = mapUserResponse({
+      nik: userRow.nik,
+      fullName: userRow.full_name,
+      email: userRow.email,
+      role: userRow.role,
+      isActive: userRow.is_active === 1,
+      mustResetPassword: userRow.must_reset_password === 1,
+      lastLoginAt: loginTimestamp,
+    });
+
+    res.json({
+      message: "Login berhasil.",
+      user: responseUser,
+      session: {
+        expiresAt: session.expiresAt,
+      },
+    });
+  })
+);
+
+app.post(
+  "/api/auth/logout",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const logoutTimestamp = new Date().toISOString();
+    await dbRun(
+      "UPDATE sessions SET revoked_at = ? WHERE id = ?",
+      [logoutTimestamp, req.auth.session.id]
+    );
+    clearSessionCookie(res);
+    res.json({ message: "Logout berhasil." });
+  })
+);
+
+app.get(
+  "/api/auth/me",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const payload = await getProfilePayload(req.auth.user.id);
+
+    if (!payload) {
+      res.status(404).json({ error: "Data pengguna tidak ditemukan." });
+      return;
+    }
+
+    res.json({
+      user: payload.user,
+      profile: payload.profile,
+      completion: payload.completion,
+      session: {
+        expiresAt: req.auth.session.expiresAt,
+      },
+    });
+  })
+);
+
+app.get(
+  "/api/profile",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const payload = await getProfilePayload(req.auth.user.id);
+    if (!payload) {
+      res.status(404).json({ error: "Data pengguna tidak ditemukan." });
+      return;
+    }
+    res.json(payload);
+  })
+);
+
+app.post(
+  "/api/profile",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const userId = req.auth.user.id;
+    const {
+      fullName,
+      email,
+      birthPlace = null,
+      birthDate = null,
+      gender = null,
+      religion = null,
+      education = null,
+      occupation = null,
+      institution = null,
+      address = null,
+      phone = null,
+    } = req.body || {};
+
+    if (!fullName || !email) {
+      res.status(400).json({ error: "Nama lengkap dan email wajib diisi." });
+      return;
+    }
+
+    const trimmedFullName = String(fullName).trim();
+    const trimmedEmail = String(email).trim();
+
+    if (!trimmedFullName) {
+      res.status(400).json({ error: "Nama lengkap tidak boleh kosong." });
+      return;
+    }
+
+    if (!trimmedEmail) {
+      res.status(400).json({ error: "Email tidak boleh kosong." });
+      return;
+    }
+
+    const userRow = await getUserRowById(userId);
+    if (!userRow) {
+      res.status(404).json({ error: "Data pengguna tidak ditemukan." });
+      return;
+    }
+
+    const nik = userRow.nik;
+
+    await dbRun(
+      `
+        UPDATE users
+        SET full_name = ?, email = ?
+        WHERE id = ?
+      `,
+      [trimmedFullName, trimmedEmail, userId]
+    );
+
+    await dbRun(
+      `
+        INSERT INTO citizen_profiles (
+          user_id,
+          full_name,
+          nik,
+          email,
+          birth_place,
+          birth_date,
+          gender,
+          religion,
+          education,
+          occupation,
+          institution,
+          address,
+          phone
+        )
+        VALUES (
+          $userId,
+          $fullName,
+          $nik,
+          $email,
+          $birthPlace,
+          $birthDate,
+          $gender,
+          $religion,
+          $education,
+          $occupation,
+          $institution,
+          $address,
+          $phone
+        )
+        ON CONFLICT(user_id) DO UPDATE SET
+          full_name = excluded.full_name,
+          nik = excluded.nik,
+          email = excluded.email,
+          birth_place = excluded.birth_place,
+          birth_date = excluded.birth_date,
+          gender = excluded.gender,
+          religion = excluded.religion,
+          education = excluded.education,
+          occupation = excluded.occupation,
+          institution = excluded.institution,
+          address = excluded.address,
+          phone = excluded.phone
+      `,
+      {
+        $userId: userId,
+        $fullName: trimmedFullName,
+        $nik: nik,
+        $email: trimmedEmail,
+        $birthPlace: birthPlace ? String(birthPlace).trim() : null,
+        $birthDate: birthDate ? String(birthDate).trim() : null,
+        $gender: gender ? String(gender).trim() : null,
+        $religion: religion ? String(religion).trim() : null,
+        $education: education ? String(education).trim() : null,
+        $occupation: occupation ? String(occupation).trim() : null,
+        $institution: institution ? String(institution).trim() : null,
+        $address: address ? String(address).trim() : null,
+        $phone: phone ? String(phone).trim() : null,
+      }
+    );
+
+    const payload = await getProfilePayload(userId);
+    res.json(payload);
+  })
+);
 
 app.get("/api/guidelines/auth", (_req, res) => {
   res.json({

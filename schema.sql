@@ -139,4 +139,34 @@ CREATE TABLE IF NOT EXISTS data_sharing_consents (
     FOREIGN KEY (citizen_record_id) REFERENCES citizen_records(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS citizen_profiles (
+    user_id INTEGER PRIMARY KEY,
+    full_name TEXT,
+    nik TEXT,
+    birth_place TEXT,
+    birth_date TEXT,
+    gender TEXT,
+    religion TEXT,
+    education TEXT,
+    occupation TEXT,
+    institution TEXT,
+    address TEXT,
+    phone TEXT,
+    email TEXT,
+    ktp_path TEXT,
+    kk_path TEXT,
+    photo_path TEXT,
+    updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TRIGGER IF NOT EXISTS trg_citizen_profiles_updated_at
+AFTER UPDATE ON citizen_profiles
+FOR EACH ROW
+BEGIN
+    UPDATE citizen_profiles
+    SET updated_at = (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+    WHERE user_id = OLD.user_id;
+END;
+
 COMMIT;
