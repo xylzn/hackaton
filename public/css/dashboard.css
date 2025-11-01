@@ -2,22 +2,7 @@ body {
       background-color: #f5f7fb;
       font-family: 'Segoe UI', sans-serif;
       transition: background-color 0.4s, color 0.4s;
-    }
-    header {
-      background-color: #0d6efd;
-      color: white;
-      padding: 15px 30px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    header img {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 2px solid white;
+      padding-top: calc(var(--navbar-height, 72px) + 32px);
     }
     .container-dashboard {
       max-width: 1100px;
@@ -87,10 +72,6 @@ body {
       background-color: #1f2025;
       color: #ddd;
     }
-    body.dark header {
-      background-color: #21222a;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.4);
-    }
     body.dark .welcome-box {
       background-color: #2a2b31;
       border-left-color: #4a90e2;
@@ -103,8 +84,4 @@ body {
     }
     body.dark h4, body.dark h5 {
       color: #4a90e2;
-    }
-
-    .jdol {
-      color: black;
     }

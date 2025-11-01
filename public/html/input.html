@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pemutakhiran Data Warga</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="../css/navbar.css">
+  <link rel="stylesheet" href="../css/input.css">
+  <script src="../js/navbar.js" defer></script>
+  <script src="../js/input.js" defer></script>
+</head>
+<body>
+  <main class="form-wrapper">
+    <div class="form-card">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <p class="form-badge mb-2">Pemutakhiran Data</p>
+          <h2 class="mb-1">Formulir Data Pribadi Warga</h2>
+          <p class="text-muted mb-0">Lengkapi informasi Anda untuk memastikan status verifikasi tetap aman.</p>
+        </div>
+      </div>
+
+      <div id="formAlert" class="alert d-none" role="alert"></div>
+
+      <div class="info-box mt-4">
+        <strong>Privasi Anda Dilindungi</strong><br>
+        Data yang Anda masukkan digunakan untuk administrasi resmi dan dilindungi sesuai UU PDP No. 27 Tahun 2022.
+      </div>
+
+      <form id="formWarga" novalidate>
+        <section class="form-section">
+          <h5>Data Diri</h5>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label" for="nama">Nama Lengkap *</label>
+              <input type="text" id="nama" class="form-control" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label" for="nik">NIK *</label>
+              <input type="text" id="nik" class="form-control" maxlength="16" inputmode="numeric" readonly>
+              <small id="nikHelp" class="text-danger d-none">NIK harus terdiri dari 16 angka.</small>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label" for="birthPlace">Tempat Lahir *</label>
+              <input type="text" id="birthPlace" class="form-control" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label" for="birthDate">Tanggal Lahir *</label>
+              <input type="date" id="birthDate" class="form-control" required>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label" for="gender">Jenis Kelamin *</label>
+              <select id="gender" class="form-select" required>
+                <option value="">-- Pilih --</option>
+                <option value="Laki-laki">Laki-laki</option>
+                <option value="Perempuan">Perempuan</option>
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label" for="religion">Agama *</label>
+              <select id="religion" class="form-select" required>
+                <option value="">-- Pilih --</option>
+                <option value="Islam">Islam</option>
+                <option value="Kristen">Kristen</option>
+                <option value="Katolik">Katolik</option>
+                <option value="Hindu">Hindu</option>
+                <option value="Buddha">Buddha</option>
+                <option value="Konghucu">Konghucu</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <section class="form-section">
+          <h5>Pendidikan & Pekerjaan</h5>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label" for="education">Pendidikan Terakhir *</label>
+              <select id="education" class="form-select" required>
+                <option value="">-- Pilih --</option>
+                <option value="SD">SD</option>
+                <option value="SMP">SMP</option>
+                <option value="SMA/SMK">SMA / SMK</option>
+                <option value="D3">D3</option>
+                <option value="S1">S1</option>
+                <option value="S2">S2</option>
+                <option value="S3">S3</option>
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label" for="occupation">Pekerjaan Saat Ini *</label>
+              <input type="text" id="occupation" class="form-control" required>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="institution">Nama Instansi / Perusahaan</label>
+            <input type="text" id="institution" class="form-control">
+          </div>
+        </section>
+
+        <section class="form-section">
+          <h5>Alamat & Kontak</h5>
+          <div class="mb-3">
+            <label class="form-label" for="address">Alamat Lengkap *</label>
+            <textarea id="address" class="form-control" rows="2" required></textarea>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label" for="email">Email *</label>
+              <input type="email" id="email" class="form-control" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label" for="phone">Nomor Telepon *</label>
+              <input type="tel" id="phone" class="form-control" required>
+            </div>
+          </div>
+        </section>
+
+        <section class="form-section">
+          <h5>Dokumen Pendukung</h5>
+          <p class="text-muted mb-3">Unggahan dokumen belum terhubung secara penuh. Simpan salinan berkas pada sesi ini untuk verifikasi manual.</p>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label" for="ktpFile">Upload KTP</label>
+              <input type="file" id="ktpFile" class="form-control" accept=".jpg,.jpeg,.png,.pdf">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label" for="kkFile">Upload KK</label>
+              <input type="file" id="kkFile" class="form-control" accept=".jpg,.jpeg,.png,.pdf">
+            </div>
+          </div>
+
+          <div class="row align-items-start">
+            <div class="col-md-3 mb-3">
+              <img id="fotoPreview" src="https://i.imgur.com/UQ0Q3mU.png" alt="Preview Foto" class="img-fluid rounded">
+            </div>
+            <div class="col-md-9 mb-3">
+              <label class="form-label" for="photoFile">Upload Pas Foto (3x4)</label>
+              <input type="file" id="photoFile" class="form-control" accept=".jpg,.jpeg,.png">
+            </div>
+          </div>
+        </section>
+
+        <div class="form-check mb-4">
+          <input class="form-check-input" type="checkbox" id="consent" required>
+          <label class="form-check-label" for="consent">
+            Saya menyatakan bahwa data yang diisi adalah benar dan dapat digunakan sesuai kebijakan privasi.
+          </label>
+        </div>
+
+        <div class="d-flex gap-3">
+          <button type="submit" class="btn btn-submit">Simpan Perubahan</button>
+          <a href="/html/dashboard.html" class="btn btn-outline-secondary">Kembali ke Dashboard</a>
+        </div>
+      </form>
+    </div>
+  </main>
+</body>
+</html>

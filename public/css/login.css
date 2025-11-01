@@ -1,0 +1,116 @@
+    /* Gaya umum halaman */
+   body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #1a75ff;
+      background-image: linear-gradient(62deg, #8EC5FC 0%, #E0C3FC 100%);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      margin: 0;
+      padding: calc(var(--navbar-height, 72px) + 40px) 16px 40px;
+      box-sizing: border-box;
+    }
+
+    /* Wrapper utama */
+    .wrapper {
+      background: #ffffff;
+      padding: 25px 30px;
+      border-radius: 15px;
+      box-shadow: 0 14px 34px rgba(38, 57, 77, 0.35);
+      width: 320px;
+      margin-top: 24px;
+    }
+
+    .title-text {
+      text-align: center;
+      margin-bottom: 15px;
+    }
+
+    .title {
+      font-size: 22px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    /* Form */
+    form {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .field {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .field input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      background-color: #fffaf9;
+      box-sizing: border-box;
+    }
+
+    .error-message {
+      color: red;
+      font-size: 13px;
+      margin-bottom: 5px;
+      display: none;
+    }
+
+    /* Link lupa password */
+    .pass-link {
+      text-align: right;
+      margin-top: 10px;
+    }
+
+    .pass-link a {
+      font-size: 13px;
+      color: #0d6efd;
+      text-decoration: none;
+    }
+
+    .pass-link a:hover {
+      text-decoration: underline;
+    }
+
+    /* Tombol login */
+    .btn {
+      position: relative;
+      margin-top: 10px;
+    }
+
+
+    .btn input[type="submit"] {
+      width: 100%;
+      background: #0d47a1;
+      color: white;
+      border: none;
+      padding: 8px;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .btn input[type="submit"]:hover {
+      background: #08357a;
+    }
+
+    body.dark {
+      background-color: #111b2e;
+      background-image: linear-gradient(160deg, #0a1a33 0%, #131c29 100%);
+      color: #f5f7fb;
+    }
+
+    body.dark .wrapper {
+      background: #1e2a3f;
+      color: #f5f7fb;
+      box-shadow: 0 18px 36px rgba(4, 10, 22, 0.55);
+    }
