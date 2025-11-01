@@ -13,7 +13,8 @@
 /* layout */
 body {
   font-family: 'Poppins', Arial, sans-serif;
-  background: var(--bg);
+  background: url('../css/background.gif') no-repeat center center fixed;
+  background-size: cover;
   color: #1e2c44;
   min-height: 100vh;
   margin: 0;
@@ -22,6 +23,19 @@ body {
   align-items: flex-start;
   justify-content: center;
   box-sizing: border-box;
+  position: relative;
+}
+
+/* Tambahkan overlay untuk membuat teks lebih mudah dibaca */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4); /* Sesuaikan opacity sesuai kebutuhan */
+  z-index: 0;
 }
 
 /* card */
@@ -34,6 +48,9 @@ body {
   box-shadow: var(--shadow-lg);
   margin-top: 8px;
   transition: transform .18s ease, box-shadow .18s ease;
+  position: relative;
+  z-index: 1;
+  background: #bbc5da;
 }
 
 .wrapper:hover {
@@ -151,7 +168,7 @@ body.dark {
   color: #e6eefc;
 }
 body.dark .wrapper {
-  background: #0f1724;
+  background: rgba(15, 23, 36, 0.95); /* Sesuaikan dengan tema gelap */
   box-shadow: 0 18px 36px rgba(2,6,23,0.7);
   border: 1px solid rgba(255,255,255,0.04);
 }
@@ -176,20 +193,16 @@ body.dark .btn input[type="submit"] {
 /* logo above form */
 .logo-wrap {
   text-align: center;
-  margin-bottom: 14px;
-}
-.login-logo {
-  width: 120px;
-  max-width: 48%;
-  height: auto;
-  display: inline-block;
-  border-radius: 8px;
-  box-shadow: 0 8px 22px rgba(13,110,253,0.08);
+  margin-bottom: 24px; /* tambah margin bawah */
+  width: 100%; /* pastikan wrap full width */
 }
 
-/* smaller screens */
-@media (max-width: 420px) {
-  .login-logo { width: 96px; }
+.login-logo {
+  width: 100%; /* ubah dari 120px ke 100% */
+  height: auto;
+  display: block; /* ubah dari inline-block ke block */
+  margin: 0 auto;
+  border-radius: 12px;
 }
 
 /* end of file */
