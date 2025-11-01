@@ -1,0 +1,100 @@
+    /* Gaya umum halaman */
+   body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #1a75ff;
+      background-image: linear-gradient(62deg, #8EC5FC 0%, #E0C3FC 100%);
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    /* Wrapper utama */
+    .wrapper {
+      background: #ffffff;
+      padding: 25px 30px;
+      border-radius: 15px;
+      box-shadow: 0 0 10px rgb(38, 57, 77) 0px 20px 30px - 10px;
+      width: 320px;
+    }
+
+    .title-text {
+      text-align: center;
+      margin-bottom: 15px;
+    }
+
+    .title {
+      font-size: 22px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    /* Form */
+    form {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .field {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .field input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      background-color: #fffaf9;
+      box-sizing: border-box;
+    }
+
+    .error-message {
+      color: red;
+      font-size: 13px;
+      margin-bottom: 5px;
+      display: none;
+    }
+
+    /* Link lupa password */
+    .pass-link {
+      text-align: right;
+      margin-top: 10px;
+    }
+
+    .pass-link a {
+      font-size: 13px;
+      color: #0d6efd;
+      text-decoration: none;
+    }
+
+    .pass-link a:hover {
+      text-decoration: underline;
+    }
+
+    /* Tombol login */
+    .btn {
+      position: relative;
+      margin-top: 10px;
+    }
+
+
+    .btn input[type="submit"] {
+      width: 100%;
+      background: #0d47a1;
+      color: white;
+      border: none;
+      padding: 8px;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .btn input[type="submit"]:hover {
+      background: #08357a;
+    }
