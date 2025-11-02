@@ -3,6 +3,7 @@
 require("dotenv").config();
 
 const fs = require("fs");
+const fsp = fs.promises;
 const path = require("path");
 const crypto = require("crypto");
 const express = require("express");
@@ -16,6 +17,10 @@ const { initializeDatabase, getConnection } = require("./db");
 const PORT = process.env.PORT || 3000;
 const STATIC_DIR = path.join(__dirname, "public");
 const DATA_STORAGE_DIR = path.join(__dirname, "data", "storage");
+const STORAGE_PUBLIC_PREFIX = "/storage";
+const DATA_URL_IMAGE_REGEX = /^data:(image\/[a-zA-Z0-9.+-]+);base64,([A-Za-z0-9+/=]+)$/;
+const ALLOWED_PHOTO_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
+const MAX_PHOTO_SIZE_BYTES = 2 * 1024 * 1024;
 const SESSION_COOKIE_NAME = "sid";
 const DEFAULT_SESSION_TTL_MS = 5 * 60 * 1000; // 5 menit
 const PARSED_SESSION_TTL = Number(process.env.SESSION_TTL_MS);
@@ -104,6 +109,101 @@ function ensureStorageDir() {
   if (!fs.existsSync(DATA_STORAGE_DIR)) {
     fs.mkdirSync(DATA_STORAGE_DIR, { recursive: true });
   }
+}
+
+function extractStorageFilename(publicPath) {
+  if (!publicPath || typeof publicPath !== "string") {
+    return null;
+  }
+  if (!publicPath.startsWith(`${STORAGE_PUBLIC_PREFIX}/`)) {
+    return null;
+  }
+  const relative = publicPath.slice(STORAGE_PUBLIC_PREFIX.length + 1);
+  if (!relative || relative.includes("..") || path.isAbsolute(relative)) {
+    return null;
+  }
+  return relative;
+}
+
+function storagePublicPath(filename) {
+  return `${STORAGE_PUBLIC_PREFIX}/${filename}`;
+}
+
+async function deleteStorageFile(publicPath) {
+  const filename = extractStorageFilename(publicPath);
+  if (!filename) {
+    return;
+  }
+
+  const absolutePath = path.join(DATA_STORAGE_DIR, filename);
+  try {
+    await fsp.unlink(absolutePath);
+  } catch (error) {
+    if (error.code !== "ENOENT") {
+      console.error("Gagal menghapus berkas lama:", error.message);
+    }
+  }
+}
+
+async function savePhotoFromDataUrl(dataUrl, currentPublicPath = null) {
+  if (!dataUrl || typeof dataUrl !== "string") {
+    return currentPublicPath || null;
+  }
+
+  const normalizedDataUrl = dataUrl.trim();
+  const match = DATA_URL_IMAGE_REGEX.exec(normalizedDataUrl);
+  if (!match) {
+    const error = new Error("Format foto tidak valid.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const mimeType = match[1].toLowerCase();
+  if (!ALLOWED_PHOTO_MIME.has(mimeType)) {
+    const error = new Error("Tipe gambar tidak didukung. Gunakan JPG, PNG, atau WebP.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const base64Payload = match[2];
+  let binary;
+  try {
+    binary = Buffer.from(base64Payload, "base64");
+  } catch (_error) {
+    const error = new Error("Data foto tidak dapat diproses.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (!binary || binary.length === 0) {
+    const error = new Error("Data foto kosong.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (binary.length > MAX_PHOTO_SIZE_BYTES) {
+    const error = new Error("Ukuran foto melebihi batas 2MB.");
+    error.statusCode = 413;
+    throw error;
+  }
+
+  let extension = ".jpg";
+  if (mimeType === "image/png") {
+    extension = ".png";
+  } else if (mimeType === "image/webp") {
+    extension = ".webp";
+  }
+
+  const filename = `${crypto.randomUUID()}${extension}`;
+  const absolutePath = path.join(DATA_STORAGE_DIR, filename);
+
+  await fsp.writeFile(absolutePath, binary);
+
+  if (currentPublicPath && currentPublicPath !== storagePublicPath(filename)) {
+    await deleteStorageFile(currentPublicPath);
+  }
+
+  return storagePublicPath(filename);
 }
 
 initializeDatabase();
@@ -644,7 +744,7 @@ app.use(
   })
 );
 
-app.use(express.json({ limit: "1mb" }));
+app.use(express.json({ limit: "5mb" }));
 app.use(express.urlencoded({ extended: false }));
 app.use((req, res, next) => {
   hydrateSessionContext(req, res)
@@ -665,6 +765,15 @@ app.use(
 app.use(
   express.static(STATIC_DIR, {
     index: "index.html",
+    setHeaders: (res) => {
+      res.setHeader("Cache-Control", "no-store");
+    },
+  })
+);
+
+app.use(
+  STORAGE_PUBLIC_PREFIX,
+  express.static(DATA_STORAGE_DIR, {
     setHeaders: (res) => {
       res.setHeader("Cache-Control", "no-store");
     },
@@ -1208,6 +1317,10 @@ app.post(
       institution = null,
       address = null,
       phone = null,
+      ktpPath = null,
+      kkPath = null,
+      photoPath = null,
+      photoData = null,
     } = req.body || {};
 
     if (!fullName || !email) {
@@ -1235,6 +1348,27 @@ app.post(
     }
 
     const nik = userRow.nik;
+    let nextPhotoPath = null;
+
+    if (typeof photoPath === "string") {
+      const trimmedPhotoPath = photoPath.trim();
+      if (trimmedPhotoPath) {
+        nextPhotoPath = trimmedPhotoPath;
+      }
+    }
+
+    if (typeof photoData === "string" && photoData.trim()) {
+      try {
+        nextPhotoPath = await savePhotoFromDataUrl(photoData, nextPhotoPath);
+      } catch (error) {
+        const status =
+          Number.isInteger(error.statusCode) && error.statusCode >= 400
+            ? error.statusCode
+            : 400;
+        res.status(status).json({ error: error.message || "Foto tidak dapat diproses." });
+        return;
+      }
+    }
 
     await dbRun(
       `
@@ -1316,7 +1450,7 @@ app.post(
         $phone: phone ? String(phone).trim() : null,
         $ktpPath: ktpPath ? String(ktpPath).trim() : null,
         $kkPath: kkPath ? String(kkPath).trim() : null,
-        $photoPath: photoPath ? String(photoPath).trim() : null,
+        $photoPath: nextPhotoPath || null,
       }
     );
 

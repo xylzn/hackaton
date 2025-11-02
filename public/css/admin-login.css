@@ -22,12 +22,16 @@ body {
 .admin-login-card {
   background: rgba(255, 255, 255, 0.96);
   border-radius: 20px;
-  padding: 36px;
+  padding: 64px 48px; /* Tambah padding dari 48px 36px */
   box-shadow:
     0 24px 48px rgba(15, 20, 45, 0.24),
     inset 0 0 0 1px rgba(255, 255, 255, 0.4);
   display: grid;
-  gap: 24px;
+  gap: 40px; /* Tambah gap dari 32px */
+}
+
+.admin-login-header {
+  margin-bottom: 20px; /* Tambah margin bawah header */
 }
 
 .admin-login-header .badge {
@@ -44,7 +48,7 @@ body {
 }
 
 .admin-login-header h1 {
-  margin: 12px 0 8px;
+  margin: 16px 0 12px; /* Menambah margin atas dan bawah */
   font-size: 1.8rem;
   color: #0c1f45;
 }
@@ -56,6 +60,12 @@ body {
   font-size: 0.95rem;
 }
 
+#adminLoginForm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px; /* Tambah gap pada form */
+}
+
 .form-label {
   font-weight: 600;
   color: #1f2f52;
@@ -64,11 +74,12 @@ body {
 
 .password-wrapper {
   position: relative;
+  margin-bottom: 15px; /* Tambah margin input password */
 }
 
 .form-control {
-  width: 100%;
-  padding: 12px 14px;
+  width: 90%;
+  padding: 14px 16px; /* Menambah padding input dari 12px/14px ke 14px/16px */
   border-radius: 12px;
   border: 1px solid rgba(23, 35, 60, 0.18);
   font-size: 0.95rem;
@@ -83,7 +94,7 @@ body {
 
 .toggle-password {
   position: absolute;
-  right: 12px;
+  right: 40px;
   top: 50%;
   transform: translateY(-50%);
   background: transparent;
@@ -92,7 +103,7 @@ body {
   font-weight: 600;
   color: #0d6efd;
   cursor: pointer;
-  padding: 4px 6px;
+  padding: 4px 0px;
   border-radius: 8px;
   transition: background 0.2s ease;
 }
@@ -107,7 +118,7 @@ body {
 .btn {
   border: none;
   border-radius: 12px;
-  padding: 12px 16px;
+  padding: 14px 16px; /* Menambah padding button dari 12px/16px ke 14px/16px */
   font-weight: 600;
   cursor: pointer;
   font-size: 0.95rem;
@@ -118,6 +129,8 @@ body {
   color: white;
   box-shadow: 0 18px 32px rgba(13, 110, 253, 0.28);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  margin-top: 12px; /* Tambah margin button */
+  margin-bottom: 24px; /* Tambah margin button */
 }
 
 .btn-primary:disabled {
@@ -134,7 +147,7 @@ body {
 
 .back-link {
   display: inline-block;
-  margin-top: 16px;
+  margin-top: 24px; /* Menambah margin top dari 16px ke 24px */
   font-size: 0.9rem;
   color: #0d6efd;
   text-decoration: none;
@@ -168,6 +181,6 @@ body {
 
 @media (max-width: 480px) {
   .admin-login-card {
-    padding: 28px 24px;
+    padding: 48px 32px; /* Sesuaikan padding mobile */
   }
 }
